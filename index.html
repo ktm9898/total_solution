@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소상공인 종합지원을 위한 자가진단 (팀 전용)</title>
+    <title>소상공인 종합지원을 위한 자가진단 (Real AI)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -15,8 +15,12 @@
         
         .print-only { display: none; }
 
+        /* [중요] 통합버전18의 인쇄 설정 100% 원복 */
         @media print {
-            @page { size: A4; margin: 0; }
+            @page {
+                size: A4;
+                margin: 0; 
+            }
             .no-print { display: none !important; }
             .print-only { display: inline !important; }
             .screen-only { display: none !important; }
@@ -190,15 +194,13 @@
             const currentYear = new Date().getFullYear();
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
-            // [수정] API 키를 사장님 것으로 고정합니다. (팀원 입력 불필요)
-            const [apiKey, setApiKey] = useState('AIzaSyB98yxs1X_eri3K5vQaA2BslkqxFZvH_HM'); 
-            
+            // [수정] API 키 고정 및 로컬스토리지 자동저장 제거
+            const [apiKey, setApiKey] = useState('여기에_실제_API_키를_넣으세요'); 
+
             const [viewMode, setViewMode] = useState('form'); 
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
-
-            // [수정] 키 고정 방식이므로 로컬 스토리지 저장 로직 제거
 
             const [formData, setFormData] = useState({
                 birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', revenueStatus: '', notes: '',
@@ -245,15 +247,51 @@
             };
 
             const runRealAIAnalysis = async () => {
-                if (!apiKey || apiKey === '여기에_실제_API_키를_넣으세요') { alert('관리자에게 문의하여 API 키 설정을 완료해주세요.'); return; }
+                if (!apiKey || apiKey === '여기에_실제_API_키를_넣으세요') { alert('API 키가 올바르게 설정되지 않았습니다.'); return; }
                 
                 setIsAnalyzing(true);
                 setAnalysisStatus('AI 서버에 연결 중...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
                 
+                // [프롬프트 원복] 사장님이 제공하신 원본 프롬프트 그대로 100% 적용
                 const promptText = `
-당신은 서울신용보증재단의 최고 전문가 '실무 비서'입니다. 사장님의 데이터를 정밀 분석하여 리포트를 작성하세요. [상담 데이터] 업종: ${formData.sector || '미입력'}, NICE: ${formData.niceScore}점, 기보증: ${formData.guaranteedAmount}만원, 매출: ${formData.revenueStatus}, 애로사항: ${formData.notes || '없음'}, 자가진단패턴: ${JSON.stringify(formData.scores)}`;
+당신은 서울신용보증재단의 최고 전문가 '실무 비서'입니다. 
+사장님의 데이터를 정밀 분석하여, 아래 [리포트 구성]에 따라 **A4 용지 1페이지 분량(약 1800자 이내)**에 딱 맞게 진단 리포트를 작성하세요.
+
+[필수 금지 사항]
+1. **'발신', '수신', '일자', '안녕하세요' 등 편지 형식 금지.**
+2. 바로 본론(1번 항목)부터 시작하세요.
+
+[분석 핵심 가이드]
+1. 1~4점은 사장님의 '갈증(Needs)'입니다. 점수를 나열하지 말고, **점수 이면에 숨겨진 경영상의 결핍과 위기 요인을 통찰력 있게 진단**하세요.
+2. 문장은 간결하고 힘 있게(전문가 톤) 작성하며, 불필요한 미사여구를 제거하세요.
+
+[리포트 구성 및 분량 제한 (엄수)]
+1. **종합 진단 총평** (공백 포함 300자 내외)
+   - 업력, 신용, 매출, 우대사항을 종합하여 현재 사장님의 경영 상황(생존/성장/위기)을 한 문장으로 명확히 정의하고, 전체적인 소견을 기술하세요.
+
+2. **사업 생애주기 및 위기 진단** (공백 포함 300자 내외)
+   - 설립일과 매출 추이를 근거로 현재 단계(창업-성장-쇠퇴-재도약)를 확정하고, 해당 시기에 겪는 일반적인 위기 상황과 사장님의 현 상황을 비교 분석하세요.
+
+3. **중점 지원 분야 분석 (심층 진단)** (공백 포함 400자 내외)
+   - 자가진단에서 3~4점을 받은 항목들을 그룹핑하여 종합 진단하세요. (단순 나열 금지)
+   - 예: "단순히 마케팅이 궁금한 것이 아니라, 매출 감소를 타개할 근본적인 브랜딩 전략과 고객 관리 시스템이 부재한 상황임."
+
+4. **실무 비서의 맞춤 지원사업 매칭** (공백 포함 500자 내외)
+   - [금융]: 신용점수와 기보증금액을 고려하여, 현실적으로 신청 가능한 서울시 자금(특별보증, 육성자금 등)을 추천하고 한도/금리 이점을 설명하세요.
+   - [비금융]: 갈증 분야(3번)를 해소할 수 있는 '자영업 클리닉', '멘토링', '교육' 등을 구체적으로 매칭하세요.
+
+5. **격려 및 한마디** (공백 포함 300자 내외)
+   - 사장님의 고민(notes)에 대해 깊이 공감하고, 지금 당장 실천해야 할 실무적인 'One-Point Lesson'과 따뜻한 응원을 전하세요.
+
+[상담 데이터]
+- 업종: ${formData.sector || '미입력'} / 설립일: ${formData.foundationDate || '미입력'}
+- NICE: ${formData.niceScore}점 / 기보증: ${formData.guaranteedAmount}만원 / 매출: ${formData.revenueStatus}
+- 우대사항: ${activeBenefits || '없음'}
+- 자가진단 패턴: ${JSON.stringify(formData.scores)}
+- 애로사항: ${formData.notes || '없음'}
+`;
 
                 try {
                     const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
@@ -263,7 +301,7 @@
                     const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent'));
                     const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
                     
-                    setAnalysisStatus(`리포트 작성 중...`);
+                    setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 분석 중...`);
 
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
                         method: 'POST',
@@ -318,15 +356,7 @@
 
             return (
                 <div className="min-h-screen py-8 px-4 relative">
-                    {/* [수정] 팀원용이므로 Safe Connect Mode 입력창을 제거(주석처리)했습니다 */}
-                    {/* <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
-                        <div className="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
-                            <Icon name="shield-check" size={14} className="text-emerald-400" />
-                            <span className="font-bold">Safe Connect Mode</span>
-                        </div>
-                    </div> 
-                    */}
-
+                    {/* [수정] 팀원용이므로 입력창은 제거하였습니다 */}
                     <div className="max-w-5xl mx-auto bg-white shadow-2xl border border-slate-200 overflow-hidden print-container rounded-sm">
                         <div className="p-10 border-b border-slate-100 bg-white relative">
                             <div className="flex justify-between items-start">
