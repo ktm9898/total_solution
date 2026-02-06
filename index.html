@@ -12,46 +12,173 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
         body { font-family: 'Noto Sans KR', sans-serif; }
+        
         .print-only { display: none; }
+
+        /* [중요] 통합버전18의 인쇄 설정 100% 원복 (입력 페이지 인쇄 보존용) */
         @media print {
-            @page { size: A4; margin: 0; }
+            @page {
+                size: A4;
+                margin: 0; 
+            }
             .no-print { display: none !important; }
             .print-only { display: inline !important; }
             .screen-only { display: none !important; }
-            body { padding: 0 !important; background: white !important; font-size: 8.5pt !important; line-height: 1.15 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; height: 297mm !important; width: 210mm !important; margin: 0 !important; }
-            .print-container { box-shadow: none !important; border: 2pt solid #000 !important; width: 190mm !important; margin: 0 auto !important; padding: 0 !important; border-radius: 0 !important; background: white !important; display: flex; flex-direction: column; transform: translateY(10mm) !important; box-sizing: border-box !important; }
+            
+            body { 
+                padding: 0 !important; 
+                background: white !important; 
+                font-size: 8.5pt !important; 
+                line-height: 1.15 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important; 
+                align-items: center !important;
+                height: 297mm !important; 
+                width: 210mm !important;
+                margin: 0 !important;
+            }
+            
+            .print-container { 
+                box-shadow: none !important; 
+                border: 2pt solid #000 !important; 
+                width: 190mm !important; 
+                margin: 0 auto !important; 
+                padding: 0 !important;
+                border-radius: 0 !important;
+                background: white !important;
+                display: flex;
+                flex-direction: column;
+                transform: translateY(10mm) !important; 
+                box-sizing: border-box !important;
+            }
+            
             .p-10 { padding: 0.5rem 1rem !important; }
             h1 { font-size: 16pt !important; margin-bottom: 0.05rem !important; }
             .text-sm { font-size: 7.5pt !important; }
             .text-xl { font-size: 10.5pt !important; }
+            
             .p-10.space-y-12 { padding: 0.6rem 1.2rem !important; }
             .space-y-12 > * + * { margin-top: 1.1rem !important; } 
+            
             h2 { font-size: 10.5pt !important; margin-bottom: 0 !important; }
             .mb-6, .mb-4 { margin-bottom: 0.3rem !important; } 
             .w-1.5.h-6 { height: 1rem !important; width: 4px !important; }
-            .info-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 0.6rem !important; }
+            
+            .info-grid { 
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 0.6rem !important;
+            }
             .info-grid label { font-size: 8pt !important; }
-            .info-grid select, .info-grid input { padding: 0.2rem 0.4rem !important; font-size: 8.5pt !important; height: 26px !important; border: 0.5pt solid #ccc !important; }
-            .revenue-box { margin-top: 0.5rem !important; padding: 0.4rem !important; gap: 1rem !important; }
+            .info-grid select, .info-grid input { 
+                padding: 0.2rem 0.4rem !important; 
+                font-size: 8.5pt !important; 
+                height: 26px !important; 
+                border: 0.5pt solid #ccc !important;
+            }
+            
+            .revenue-box { 
+                margin-top: 0.5rem !important; 
+                padding: 0.4rem !important; 
+                gap: 1rem !important;
+            }
             .revenue-box span { font-size: 8.5pt !important; }
-            .legend-box { padding: 0.2rem 0.5rem !important; margin-bottom: 0.25rem !important; border: 0.5pt solid #e2e8f0 !important; line-height: 0.85 !important; display: flex !important; flex-direction: column !important; gap: 0.05rem !important; }
+            
+            .legend-box { 
+                padding: 0.2rem 0.5rem !important; 
+                margin-bottom: 0.25rem !important; 
+                border: 0.5pt solid #e2e8f0 !important;
+                line-height: 0.85 !important; 
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.05rem !important;
+            }
             .legend-box span { font-size: 8pt !important; }
             .legend-box div.w-full { margin-bottom: 0 !important; }
+
             table th, table td { padding: 0.4rem 0.4rem !important; font-size: 9pt !important; border: 0.5pt solid #eee !important; }
             .text-center-print { text-align: center !important; } 
             .w-9.h-9 { width: 1.2rem !important; height: 1.2rem !important; font-size: 8pt !important; }
-            .bottom-grid { display: grid !important; grid-template-columns: 1.1fr 0.9fr !important; gap: 1.2rem !important; align-items: stretch !important; }
-            .benefit-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 0.35rem !important; width: 100% !important; }
-            .benefit-grid label { padding: 0.3rem 0.5rem !important; border: 0.5pt solid #eee !important; font-size: 8pt !important; height: 32px !important; display: flex !important; align-items: center; width: 100% !important; box-sizing: border-box !important; margin: 0 !important; }
-            .notes-area { min-height: 132px !important; height: 100% !important; font-size: 9pt !important; padding: 0.5rem !important; border: 0.5pt solid #ccc !important; box-sizing: border-box !important; }
-            .report-view { display: block !important; border: none !important; box-shadow: none !important; margin-top: 0 !important; height: auto !important; }
-            .report-info-container { border: 1pt solid #ccc !important; background-color: #f8fafc !important; padding: 3mm !important; margin-bottom: 4mm !important; border-radius: 4px !important; }
-            .report-info-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2mm !important; row-gap: 2mm !important; }
+            
+            .bottom-grid { 
+                display: grid !important;
+                grid-template-columns: 1.1fr 0.9fr !important;
+                gap: 1.2rem !important;
+                align-items: stretch !important;
+            }
+            
+            .benefit-grid { 
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important; 
+                gap: 0.35rem !important; 
+                width: 100% !important;
+            }
+            .benefit-grid label { 
+                padding: 0.3rem 0.5rem !important; 
+                border: 0.5pt solid #eee !important;
+                font-size: 8pt !important;
+                height: 32px !important; 
+                display: flex !important;
+                align-items: center;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+            
+            .notes-area { 
+                min-height: 132px !important; 
+                height: 100% !important;
+                font-size: 9pt !important;
+                padding: 0.5rem !important;
+                border: 0.5pt solid #ccc !important;
+                box-sizing: border-box !important;
+            }
+
+            /* --- [추가] 리포트 결과 화면 전용 스타일 --- */
+            /* 입력 페이지 스타일은 건드리지 않고, 리포트 모드일 때만 적용되는 스타일입니다 */
+            .report-view { 
+                display: block !important; 
+                border: none !important;
+                box-shadow: none !important;
+                margin-top: 0 !important;
+                height: auto !important; /* 높이 자동 조절 */
+            }
+            
+            /* 기본정보 요약 그리드 (Compact) */
+            .report-info-container {
+                border: 1pt solid #ccc !important;
+                background-color: #f8fafc !important;
+                padding: 3mm !important;
+                margin-bottom: 4mm !important;
+                border-radius: 4px !important;
+            }
+            .report-info-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 2mm !important;
+                row-gap: 2mm !important;
+            }
             .report-info-item { display: flex !important; flex-direction: column !important; }
             .report-info-label { font-size: 7pt !important; color: #64748b !important; margin-bottom: 0 !important; font-weight: bold !important; }
             .report-info-value { font-size: 9pt !important; font-weight: 800 !important; color: #000 !important; }
-            .ai-text-line { font-size: 9pt !important; line-height: 1.35 !important; margin-bottom: 1px !important; text-align: justify !important; }
-            .ai-text-header { font-size: 10.5pt !important; font-weight: 900 !important; margin-top: 3mm !important; margin-bottom: 1mm !important; color: #000 !important; border-bottom: 1px dashed #bbb; display: block; }
+
+            /* AI 텍스트 줄간격 축소 (Compact) */
+            .ai-text-line {
+                font-size: 9pt !important;
+                line-height: 1.35 !important;
+                margin-bottom: 1px !important;
+                text-align: justify !important;
+            }
+            .ai-text-header {
+                font-size: 10.5pt !important;
+                font-weight: 900 !important;
+                margin-top: 3mm !important;
+                margin-bottom: 1mm !important;
+                color: #000 !important;
+                border-bottom: 1px dashed #bbb;
+                display: block;
+            }
             .ai-text-bold { font-weight: 800 !important; }
         }
     </style>
@@ -71,14 +198,12 @@
             const currentYear = new Date().getFullYear();
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
-            // [수정] 보안을 위해 브라우저 로컬 저장소에서 키를 불러옵니다.
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
             const [viewMode, setViewMode] = useState('form'); 
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
 
-            // [수정] 키가 입력될 때마다 브라우저가 기억하도록 저장합니다.
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
 
             const [formData, setFormData] = useState({
@@ -90,6 +215,7 @@
             const categories = [ { name: "홍보·마케팅", startIdx: 0, count: 4 }, { name: "매장 운영·관리", startIdx: 4, count: 4 }, { name: "법률·노무·세무", startIdx: 8, count: 3 } ];
             const questions = [ "우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다." ];
             
+            // [원복] 통합버전18과 동일한 긴 텍스트 유지
             const benefitOptions = [
                 { key: 'jobIncrease', label: '상시근로자 고용 증가' },
                 { key: 'jobCreation', label: '일자리 창출(청년, 여성, 고령자, 장애인 고용)' },
@@ -104,13 +230,17 @@
             const handleScoreChange = (index, score) => { const newScores = [...formData.scores]; newScores[index] = score; setFormData({ ...formData, scores: newScores }); };
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
 
+            // [수정] 텍스트 포맷터: 줄간격 최적화 CSS 클래스 적용
             const formatText = (text) => {
                 if (!text) return "";
+                // 빈 줄 제거하여 세로 폭 절약
                 return text.split('\n').filter(line => line.trim() !== '').map((line, i) => {
+                    // 헤더 인식
                     if (line.match(/^(#|\*\*1\.|\*\*2\.|\*\*3\.|\*\*4\.|\*\*5\.)/)) {
                         const cleanLine = line.replace(/#/g, '').replace(/\*\*/g, '').trim();
                         return <div key={i} className="ai-text-header">{cleanLine}</div>;
                     }
+                    // 본문
                     const parts = line.split(/(\*\*.*?\*\*)/g);
                     return (
                         <div key={i} className="ai-text-line">
@@ -126,14 +256,14 @@
             };
 
             const runRealAIAnalysis = async () => {
-                if (!apiKey) { alert('우측 상단 [Safe Connect Mode]에 구글 API 키를 먼저 입력해주세요.'); return; }
+                if (!apiKey) { alert('상단 Safe Connect Mode에 구글 API 키를 먼저 입력해주세요.'); return; }
                 
                 setIsAnalyzing(true);
                 setAnalysisStatus('AI 서버에 연결 중...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
                 
-                // [프롬프트] 성공버전24 원본 그대로 유지
+                // [프롬프트 유지] 사장님이 지정하신 프롬프트 그대로 사용
                 const promptText = `
 당신은 서울신용보증재단의 최고 전문가 '실무 비서'입니다. 
 사장님의 데이터를 정밀 분석하여, 아래 [리포트 구성]에 따라 **A4 용지 1페이지 분량(약 1800자 이내)**에 딱 맞게 진단 리포트를 작성하세요.
@@ -173,7 +303,16 @@
 `;
 
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                    const listData = await listResp.json();
+                    if (listData.error) throw new Error(listData.error.message);
+
+                    const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
+                    const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
+                    
+                    setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 리포트 작성 중...`);
+
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
@@ -197,6 +336,7 @@
                             <p className="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
                         </div>
                         
+                        {/* [수정] 칭찬해주신 '기본정보 요약 그리드' 적용 */}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
@@ -210,13 +350,16 @@
                             </div>
                         </div>
 
+                        {/* [수정] 줄간격 축소된 AI 본문 */}
                         <div className="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">
                             {formatText(aiResponse)}
                         </div>
 
                         <div className="mt-8 pt-6 border-t flex justify-center gap-4 no-print">
                             <button onClick={() => setViewMode('form')} className="px-8 py-3 bg-slate-800 text-white rounded-full font-black hover:bg-slate-700 flex items-center gap-2"><Icon name="rotate-ccw" size={18} /> 다시 진단하기</button>
-                            <button onClick={() => window.print()} className="px-8 py-3 border-2 border-slate-800 text-slate-800 rounded-full font-black hover:bg-slate-50 transition-all">리포트 인쇄</button>
+                            <button onClick={() => window.print()} className="px-8 py-3 border-2 border-slate-800 text-slate-800 rounded-full font-black hover:bg-slate-50 transition-all">
+                                리포트 인쇄
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -226,7 +369,6 @@
 
             return (
                 <div className="min-h-screen py-8 px-4 relative">
-                    {/* [추가] 우측 상단 Safe Connect Mode 입력창 */}
                     <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
                         <div className="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
                             <Icon name="shield-check" size={14} className="text-emerald-400" />
@@ -255,6 +397,7 @@
                         </div>
 
                         <div className="p-10 space-y-12">
+                            {/* [중요] 기존 통합버전18의 입력폼 코드 100% 동일하게 유지 (인쇄 레이아웃 포함) */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">1. 기본정보(대표자, 사업체)</h2></div>
                                 <div className="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
