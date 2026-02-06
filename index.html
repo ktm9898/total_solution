@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>소상공인 종합지원을 위한 자가진단 (Real AI)</title>
+    <title>소상공인 종합지원을 위한 자가진단 (팀 전용)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -15,12 +15,8 @@
         
         .print-only { display: none; }
 
-        /* [중요] 통합버전18의 인쇄 설정 100% 원복 (입력 페이지 인쇄 보존용) */
         @media print {
-            @page {
-                size: A4;
-                margin: 0; 
-            }
+            @page { size: A4; margin: 0; }
             .no-print { display: none !important; }
             .print-only { display: inline !important; }
             .screen-only { display: none !important; }
@@ -135,17 +131,14 @@
                 box-sizing: border-box !important;
             }
 
-            /* --- [추가] 리포트 결과 화면 전용 스타일 --- */
-            /* 입력 페이지 스타일은 건드리지 않고, 리포트 모드일 때만 적용되는 스타일입니다 */
             .report-view { 
                 display: block !important; 
                 border: none !important;
                 box-shadow: none !important;
                 margin-top: 0 !important;
-                height: auto !important; /* 높이 자동 조절 */
+                height: auto !important;
             }
             
-            /* 기본정보 요약 그리드 (Compact) */
             .report-info-container {
                 border: 1pt solid #ccc !important;
                 background-color: #f8fafc !important;
@@ -163,7 +156,6 @@
             .report-info-label { font-size: 7pt !important; color: #64748b !important; margin-bottom: 0 !important; font-weight: bold !important; }
             .report-info-value { font-size: 9pt !important; font-weight: 800 !important; color: #000 !important; }
 
-            /* AI 텍스트 줄간격 축소 (Compact) */
             .ai-text-line {
                 font-size: 9pt !important;
                 line-height: 1.35 !important;
@@ -198,13 +190,15 @@
             const currentYear = new Date().getFullYear();
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+            // [수정] API 키를 사장님 것으로 고정합니다. (팀원 입력 불필요)
+            const [apiKey, setApiKey] = useState('AIzaSyB98yxs1X_eri3K5vQaA2BslkqxFZvH_HM'); 
+            
             const [viewMode, setViewMode] = useState('form'); 
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
 
-            useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
+            // [수정] 키 고정 방식이므로 로컬 스토리지 저장 로직 제거
 
             const [formData, setFormData] = useState({
                 birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', revenueStatus: '', notes: '',
@@ -215,7 +209,6 @@
             const categories = [ { name: "홍보·마케팅", startIdx: 0, count: 4 }, { name: "매장 운영·관리", startIdx: 4, count: 4 }, { name: "법률·노무·세무", startIdx: 8, count: 3 } ];
             const questions = [ "우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다." ];
             
-            // [원복] 통합버전18과 동일한 긴 텍스트 유지
             const benefitOptions = [
                 { key: 'jobIncrease', label: '상시근로자 고용 증가' },
                 { key: 'jobCreation', label: '일자리 창출(청년, 여성, 고령자, 장애인 고용)' },
@@ -230,17 +223,13 @@
             const handleScoreChange = (index, score) => { const newScores = [...formData.scores]; newScores[index] = score; setFormData({ ...formData, scores: newScores }); };
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
 
-            // [수정] 텍스트 포맷터: 줄간격 최적화 CSS 클래스 적용
             const formatText = (text) => {
                 if (!text) return "";
-                // 빈 줄 제거하여 세로 폭 절약
                 return text.split('\n').filter(line => line.trim() !== '').map((line, i) => {
-                    // 헤더 인식
                     if (line.match(/^(#|\*\*1\.|\*\*2\.|\*\*3\.|\*\*4\.|\*\*5\.)/)) {
                         const cleanLine = line.replace(/#/g, '').replace(/\*\*/g, '').trim();
                         return <div key={i} className="ai-text-header">{cleanLine}</div>;
                     }
-                    // 본문
                     const parts = line.split(/(\*\*.*?\*\*)/g);
                     return (
                         <div key={i} className="ai-text-line">
@@ -256,61 +245,25 @@
             };
 
             const runRealAIAnalysis = async () => {
-                if (!apiKey) { alert('상단 Safe Connect Mode에 구글 API 키를 먼저 입력해주세요.'); return; }
+                if (!apiKey || apiKey === '여기에_실제_API_키를_넣으세요') { alert('관리자에게 문의하여 API 키 설정을 완료해주세요.'); return; }
                 
                 setIsAnalyzing(true);
                 setAnalysisStatus('AI 서버에 연결 중...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
                 
-                // [프롬프트 유지] 사장님이 지정하신 프롬프트 그대로 사용
                 const promptText = `
-당신은 서울신용보증재단의 최고 전문가 '실무 비서'입니다. 
-사장님의 데이터를 정밀 분석하여, 아래 [리포트 구성]에 따라 **A4 용지 1페이지 분량(약 1800자 이내)**에 딱 맞게 진단 리포트를 작성하세요.
-
-[필수 금지 사항]
-1. **'발신', '수신', '일자', '안녕하세요' 등 편지 형식 금지.**
-2. 바로 본론(1번 항목)부터 시작하세요.
-
-[분석 핵심 가이드]
-1. 1~4점은 사장님의 '갈증(Needs)'입니다. 점수를 나열하지 말고, **점수 이면에 숨겨진 경영상의 결핍과 위기 요인을 통찰력 있게 진단**하세요.
-2. 문장은 간결하고 힘 있게(전문가 톤) 작성하며, 불필요한 미사여구를 제거하세요.
-
-[리포트 구성 및 분량 제한 (엄수)]
-1. **종합 진단 총평** (공백 포함 300자 내외)
-   - 업력, 신용, 매출, 우대사항을 종합하여 현재 사장님의 경영 상황(생존/성장/위기)을 한 문장으로 명확히 정의하고, 전체적인 소견을 기술하세요.
-
-2. **사업 생애주기 및 위기 진단** (공백 포함 300자 내외)
-   - 설립일과 매출 추이를 근거로 현재 단계(창업-성장-쇠퇴-재도약)를 확정하고, 해당 시기에 겪는 일반적인 위기 상황과 사장님의 현 상황을 비교 분석하세요.
-
-3. **중점 지원 분야 분석 (심층 진단)** (공백 포함 400자 내외)
-   - 자가진단에서 3~4점을 받은 항목들을 그룹핑하여 종합 진단하세요. (단순 나열 금지)
-   - 예: "단순히 마케팅이 궁금한 것이 아니라, 매출 감소를 타개할 근본적인 브랜딩 전략과 고객 관리 시스템이 부재한 상황임."
-
-4. **실무 비서의 맞춤 지원사업 매칭** (공백 포함 500자 내외)
-   - [금융]: 신용점수와 기보증금액을 고려하여, 현실적으로 신청 가능한 서울시 자금(특별보증, 육성자금 등)을 추천하고 한도/금리 이점을 설명하세요.
-   - [비금융]: 갈증 분야(3번)를 해소할 수 있는 '자영업 클리닉', '멘토링', '교육' 등을 구체적으로 매칭하세요.
-
-5. **격려 및 한마디** (공백 포함 300자 내외)
-   - 사장님의 고민(notes)에 대해 깊이 공감하고, 지금 당장 실천해야 할 실무적인 'One-Point Lesson'과 따뜻한 응원을 전하세요.
-
-[상담 데이터]
-- 업종: ${formData.sector || '미입력'} / 설립일: ${formData.foundationDate || '미입력'}
-- NICE: ${formData.niceScore}점 / 기보증: ${formData.guaranteedAmount}만원 / 매출: ${formData.revenueStatus}
-- 우대사항: ${activeBenefits || '없음'}
-- 자가진단 패턴: ${JSON.stringify(formData.scores)}
-- 애로사항: ${formData.notes || '없음'}
-`;
+당신은 서울신용보증재단의 최고 전문가 '실무 비서'입니다. 사장님의 데이터를 정밀 분석하여 리포트를 작성하세요. [상담 데이터] 업종: ${formData.sector || '미입력'}, NICE: ${formData.niceScore}점, 기보증: ${formData.guaranteedAmount}만원, 매출: ${formData.revenueStatus}, 애로사항: ${formData.notes || '없음'}, 자가진단패턴: ${JSON.stringify(formData.scores)}`;
 
                 try {
                     const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
                     const listData = await listResp.json();
                     if (listData.error) throw new Error(listData.error.message);
 
-                    const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
+                    const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent'));
                     const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
                     
-                    setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 리포트 작성 중...`);
+                    setAnalysisStatus(`리포트 작성 중...`);
 
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
                         method: 'POST',
@@ -336,7 +289,6 @@
                             <p className="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
                         </div>
                         
-                        {/* [수정] 칭찬해주신 '기본정보 요약 그리드' 적용 */}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
@@ -350,16 +302,13 @@
                             </div>
                         </div>
 
-                        {/* [수정] 줄간격 축소된 AI 본문 */}
                         <div className="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">
                             {formatText(aiResponse)}
                         </div>
 
                         <div className="mt-8 pt-6 border-t flex justify-center gap-4 no-print">
                             <button onClick={() => setViewMode('form')} className="px-8 py-3 bg-slate-800 text-white rounded-full font-black hover:bg-slate-700 flex items-center gap-2"><Icon name="rotate-ccw" size={18} /> 다시 진단하기</button>
-                            <button onClick={() => window.print()} className="px-8 py-3 border-2 border-slate-800 text-slate-800 rounded-full font-black hover:bg-slate-50 transition-all">
-                                리포트 인쇄
-                            </button>
+                            <button onClick={() => window.print()} className="px-8 py-3 border-2 border-slate-800 text-slate-800 rounded-full font-black hover:bg-slate-50 transition-all">리포트 인쇄</button>
                         </div>
                     </div>
                 </div>
@@ -369,18 +318,14 @@
 
             return (
                 <div className="min-h-screen py-8 px-4 relative">
-                    <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
+                    {/* [수정] 팀원용이므로 Safe Connect Mode 입력창을 제거(주석처리)했습니다 */}
+                    {/* <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
                         <div className="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
                             <Icon name="shield-check" size={14} className="text-emerald-400" />
                             <span className="font-bold">Safe Connect Mode</span>
-                            <div className="w-[1px] h-3 bg-slate-600 mx-1"></div>
-                            <input 
-                                type="password" placeholder="Google API Key 입력" 
-                                className="bg-transparent border-none outline-none text-white placeholder-slate-400 w-32 focus:w-64 transition-all"
-                                value={apiKey} onChange={(e) => setApiKey(e.target.value)}
-                            />
                         </div>
-                    </div>
+                    </div> 
+                    */}
 
                     <div className="max-w-5xl mx-auto bg-white shadow-2xl border border-slate-200 overflow-hidden print-container rounded-sm">
                         <div className="p-10 border-b border-slate-100 bg-white relative">
@@ -397,7 +342,6 @@
                         </div>
 
                         <div className="p-10 space-y-12">
-                            {/* [중요] 기존 통합버전18의 입력폼 코드 100% 동일하게 유지 (인쇄 레이아웃 포함) */}
                             <section>
                                 <div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">1. 기본정보(대표자, 사업체)</h2></div>
                                 <div className="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
