@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,123 +12,210 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        
-        .print-only { display: none; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .print-only {
+            display: none;
+        }
 
         /* [중요] 통합버전18의 인쇄 설정 100% 원복 (입력 페이지 인쇄 보존용) */
         @media print {
             @page {
                 size: A4;
-                margin: 0; 
+                margin: 0;
             }
-            .no-print { display: none !important; }
-            .print-only { display: inline !important; }
-            .screen-only { display: none !important; }
-            
-            body { 
-                padding: 0 !important; 
-                background: white !important; 
-                font-size: 8.5pt !important; 
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+
+            .screen-only {
+                display: none !important;
+            }
+
+            body {
+                padding: 0 !important;
+                background: white !important;
+                font-size: 8.5pt !important;
                 line-height: 1.15 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                justify-content: center !important; 
+                justify-content: center !important;
                 align-items: center !important;
-                height: 297mm !important; 
+                height: 297mm !important;
                 width: 210mm !important;
                 margin: 0 !important;
             }
-            
-            .print-container { 
-                box-shadow: none !important; 
-                border: 2pt solid #000 !important; 
-                width: 190mm !important; 
-                margin: 0 auto !important; 
+
+            .print-container {
+                box-shadow: none !important;
+                border: 2pt solid #000 !important;
+                width: 190mm !important;
+                margin: 0 auto !important;
                 padding: 0 !important;
                 border-radius: 0 !important;
                 background: white !important;
                 display: flex;
                 flex-direction: column;
-                transform: translateY(10mm) !important; 
+                transform: translateY(10mm) !important;
                 box-sizing: border-box !important;
             }
-            
-            .p-10 { padding: 0.5rem 1rem !important; }
-            h1 { font-size: 16pt !important; margin-bottom: 0.05rem !important; }
-            .text-sm { font-size: 7.5pt !important; }
-            .text-xl { font-size: 10.5pt !important; }
-            
-            .p-10.space-y-12 { padding: 0.6rem 1.2rem !important; }
-            .space-y-12 > * + * { margin-top: 1.1rem !important; } 
-            
-            h2 { font-size: 10.5pt !important; margin-bottom: 0 !important; }
-            .mb-6, .mb-4 { margin-bottom: 0.3rem !important; } 
-            .w-1.5.h-6 { height: 1rem !important; width: 4px !important; }
-            
-            .info-grid { 
+
+            /* 리포트 화면 전용 인쇄 스타일 (입력화면에는 적용 안됨) */
+            .report-view {
+                transform: none !important;
+                margin-top: 5mm !important;
+                max-height: 280mm !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* 리포트 부모 컨테이너 */
+            .min-h-screen:has(.report-view),
+            div:has(> .report-view) {
+                max-height: 297mm !important;
+                overflow: hidden !important;
+            }
+
+            .p-10 {
+                padding: 0.5rem 1rem !important;
+            }
+
+            h1 {
+                font-size: 16pt !important;
+                margin-bottom: 0.05rem !important;
+            }
+
+            .text-sm {
+                font-size: 7.5pt !important;
+            }
+
+            .text-xl {
+                font-size: 10.5pt !important;
+            }
+
+            .p-10.space-y-12 {
+                padding: 0.6rem 1.2rem !important;
+            }
+
+            .space-y-12>*+* {
+                margin-top: 1.1rem !important;
+            }
+
+            h2 {
+                font-size: 10.5pt !important;
+                margin-bottom: 0 !important;
+            }
+
+            .mb-6,
+            .mb-4 {
+                margin-bottom: 0.3rem !important;
+            }
+
+            .w-1.5.h-6 {
+                height: 1rem !important;
+                width: 4px !important;
+            }
+
+            .info-grid {
                 display: grid !important;
                 grid-template-columns: repeat(3, 1fr) !important;
                 gap: 0.6rem !important;
             }
-            .info-grid label { font-size: 8pt !important; }
-            .info-grid select, .info-grid input { 
-                padding: 0.2rem 0.4rem !important; 
-                font-size: 8.5pt !important; 
-                height: 26px !important; 
+
+            .info-grid label {
+                font-size: 8pt !important;
+            }
+
+            .info-grid select,
+            .info-grid input {
+                padding: 0.2rem 0.4rem !important;
+                font-size: 8.5pt !important;
+                height: 26px !important;
                 border: 0.5pt solid #ccc !important;
             }
-            
-            .revenue-box { 
-                margin-top: 0.5rem !important; 
-                padding: 0.4rem !important; 
+
+            .revenue-box {
+                margin-top: 0.5rem !important;
+                padding: 0.4rem !important;
                 gap: 1rem !important;
             }
-            .revenue-box span { font-size: 8.5pt !important; }
-            
-            .legend-box { 
-                padding: 0.2rem 0.5rem !important; 
-                margin-bottom: 0.25rem !important; 
+
+            .revenue-box span {
+                font-size: 8.5pt !important;
+            }
+
+            .legend-box {
+                padding: 0.2rem 0.5rem !important;
+                margin-bottom: 0.25rem !important;
                 border: 0.5pt solid #e2e8f0 !important;
-                line-height: 0.85 !important; 
+                line-height: 0.85 !important;
                 display: flex !important;
                 flex-direction: column !important;
                 gap: 0.05rem !important;
             }
-            .legend-box span { font-size: 8pt !important; }
-            .legend-box div.w-full { margin-bottom: 0 !important; }
 
-            table th, table td { padding: 0.4rem 0.4rem !important; font-size: 9pt !important; border: 0.5pt solid #eee !important; }
-            .text-center-print { text-align: center !important; } 
-            .w-9.h-9 { width: 1.2rem !important; height: 1.2rem !important; font-size: 8pt !important; }
-            
-            .bottom-grid { 
+            .legend-box span {
+                font-size: 8pt !important;
+            }
+
+            .legend-box div.w-full {
+                margin-bottom: 0 !important;
+            }
+
+            table th,
+            table td {
+                padding: 0.4rem 0.4rem !important;
+                font-size: 9pt !important;
+                border: 0.5pt solid #eee !important;
+            }
+
+            .text-center-print {
+                text-align: center !important;
+            }
+
+            .w-9.h-9 {
+                width: 1.2rem !important;
+                height: 1.2rem !important;
+                font-size: 8pt !important;
+            }
+
+            .bottom-grid {
                 display: grid !important;
                 grid-template-columns: 1.1fr 0.9fr !important;
                 gap: 1.2rem !important;
                 align-items: stretch !important;
             }
-            
-            .benefit-grid { 
+
+            .benefit-grid {
                 display: grid !important;
-                grid-template-columns: 1fr 1fr !important; 
-                gap: 0.35rem !important; 
+                grid-template-columns: 1fr 1fr !important;
+                gap: 0.35rem !important;
                 width: 100% !important;
             }
-            .benefit-grid label { 
-                padding: 0.3rem 0.5rem !important; 
+
+            .benefit-grid label {
+                padding: 0.3rem 0.5rem !important;
                 border: 0.5pt solid #eee !important;
                 font-size: 8pt !important;
-                height: 32px !important; 
+                height: 32px !important;
                 display: flex !important;
                 align-items: center;
                 width: 100% !important;
                 box-sizing: border-box !important;
                 margin: 0 !important;
             }
-            
-            .notes-area { 
-                min-height: 132px !important; 
+
+            .notes-area {
+                min-height: 132px !important;
                 height: 100% !important;
                 font-size: 9pt !important;
                 padding: 0.5rem !important;
@@ -137,14 +225,19 @@
 
             /* --- [추가] 리포트 결과 화면 전용 스타일 --- */
             /* 입력 페이지 스타일은 건드리지 않고, 리포트 모드일 때만 적용되는 스타일입니다 */
-            .report-view { 
-                display: block !important; 
+            .report-view {
+                display: block !important;
                 border: none !important;
                 box-shadow: none !important;
                 margin-top: 0 !important;
-                height: auto !important; /* 높이 자동 조절 */
+                max-height: 270mm !important;
+                /* A4 높이 제한 (여백 고려) */
+                overflow: hidden !important;
+                /* 넘치는 내용 숨김 */
+                page-break-inside: avoid !important;
+                page-break-after: avoid !important;
             }
-            
+
             /* 기본정보 요약 그리드 (Compact) */
             .report-info-container {
                 border: 1pt solid #ccc !important;
@@ -153,36 +246,57 @@
                 margin-bottom: 4mm !important;
                 border-radius: 4px !important;
             }
+
             .report-info-grid {
                 display: grid !important;
                 grid-template-columns: repeat(4, 1fr) !important;
                 gap: 2mm !important;
                 row-gap: 2mm !important;
             }
-            .report-info-item { display: flex !important; flex-direction: column !important; }
-            .report-info-label { font-size: 7pt !important; color: #64748b !important; margin-bottom: 0 !important; font-weight: bold !important; }
-            .report-info-value { font-size: 9pt !important; font-weight: 800 !important; color: #000 !important; }
 
-            /* AI 텍스트 줄간격 축소 (Compact) */
-            .ai-text-line {
+            .report-info-item {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            .report-info-label {
+                font-size: 7pt !important;
+                color: #64748b !important;
+                margin-bottom: 0 !important;
+                font-weight: bold !important;
+            }
+
+            .report-info-value {
                 font-size: 9pt !important;
-                line-height: 1.35 !important;
-                margin-bottom: 1px !important;
+                font-weight: 800 !important;
+                color: #000 !important;
+            }
+
+            /* AI 텍스트 (1800자가 A4 1페이지를 꽉 채우도록 조정) */
+            .ai-text-line {
+                font-size: 9.5pt !important;
+                line-height: 1.5 !important;
+                margin-bottom: 0.5mm !important;
                 text-align: justify !important;
             }
+
             .ai-text-header {
                 font-size: 10.5pt !important;
                 font-weight: 900 !important;
                 margin-top: 3mm !important;
-                margin-bottom: 1mm !important;
+                margin-bottom: 1.2mm !important;
                 color: #000 !important;
-                border-bottom: 1px dashed #bbb;
+                border-bottom: 0.5px dashed #bbb;
                 display: block;
             }
-            .ai-text-bold { font-weight: 800 !important; }
+
+            .ai-text-bold {
+                font-weight: 800 !important;
+            }
         }
     </style>
 </head>
+
 <body class="bg-slate-100">
     <div id="root"></div>
 
@@ -199,7 +313,7 @@
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-            const [viewMode, setViewMode] = useState('form'); 
+            const [viewMode, setViewMode] = useState('form');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
@@ -212,9 +326,9 @@
                 scores: Array(11).fill(0)
             });
 
-            const categories = [ { name: "홍보·마케팅", startIdx: 0, count: 4 }, { name: "매장 운영·관리", startIdx: 4, count: 4 }, { name: "법률·노무·세무", startIdx: 8, count: 3 } ];
-            const questions = [ "우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다." ];
-            
+            const categories = [{ name: "홍보·마케팅", startIdx: 0, count: 4 }, { name: "매장 운영·관리", startIdx: 4, count: 4 }, { name: "법률·노무·세무", startIdx: 8, count: 3 }];
+            const questions = ["우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다."];
+
             // [원복] 통합버전18과 동일한 긴 텍스트 유지
             const benefitOptions = [
                 { key: 'jobIncrease', label: '상시근로자 고용 증가' },
@@ -230,11 +344,16 @@
             const handleScoreChange = (index, score) => { const newScores = [...formData.scores]; newScores[index] = score; setFormData({ ...formData, scores: newScores }); };
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
 
-            // [수정] 텍스트 포맷터: 줄간격 최적화 CSS 클래스 적용
+            // [수정] 텍스트 포매터: 줄간격 최적화 + --- 구분선 제거
             const formatText = (text) => {
                 if (!text) return "";
-                // 빈 줄 제거하여 세로 폭 절약
-                return text.split('\n').filter(line => line.trim() !== '').map((line, i) => {
+                // 빈 줄 및 --- 구분선 제거하여 세로 폭 절약
+                return text.split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    // 빈 줄, --- 구분선, *** 구분선 제거
+                    if (trimmed === '' || trimmed.match(/^[-*=_]{3,}$/)) return false;
+                    return true;
+                }).map((line, i) => {
                     // 헤더 인식
                     if (line.match(/^(#|\*\*1\.|\*\*2\.|\*\*3\.|\*\*4\.|\*\*5\.)/)) {
                         const cleanLine = line.replace(/#/g, '').replace(/\*\*/g, '').trim();
@@ -257,16 +376,16 @@
 
             const runRealAIAnalysis = async () => {
                 if (!apiKey) { alert('상단 Safe Connect Mode에 구글 API 키를 먼저 입력해주세요.'); return; }
-                
+
                 setIsAnalyzing(true);
                 setAnalysisStatus('AI 서버에 연결 중...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
-                
+
                 // [프롬프트 유지] 사장님이 지정하신 프롬프트 그대로 사용
                 const promptText = `
 당신은 서울신용보증재단의 최고 전문가 입니다. 
-사장님이 응답한 데이터를 정밀 분석하여, 아래 [리포트 구성]에 따라 **A4 용지 1페이지 분량(약 1700자 이내)**에 맞게 진단 리포트를 작성하세요.
+사장님이 응답한 데이터를 정밀 분석하여, 아래 [리포트 구성]에 따라 **A4 용지 1페이지 분량(반드시 1800자 이내)**에 맞게 진단 리포트를 작성하세요.
 
 [데이터 해석 핵심 원칙 - 필독]
 1. **점수의 의미**: 자가진단 항목의 1~4점은 '실력'이 아니라 해당 분야에 대한 **'지원 필요성의 강도'**입니다.
@@ -275,17 +394,20 @@
 2. **숫자 언급 금지**: 리포트 본문에 "3점을 주셨습니다", "4점 항목인~" 등 **숫자나 점수를 직접 언급하는 것을 절대 금지**합니다. 
 3. **의미 중심 서술**: 점수 대신 "절실함이 느껴지는", "지원이 시급한", "강한 개선 의지를 보이는" 등의 표현을 사용하여 사장님의 니즈를 통찰력 있게 분석하세요.
 
-[필수 금지 사항]
+[필수 금지 사항] ★★★ 반드시 준수 ★★★
 1. 리포트의 제목을 절대 작성하지 마세요. (예: '사장님 진단 리포트' 금지)
 2. 머리말, 발신/수신, 날짜, 인사말 등을 절대 포함하지 마세요.
 3. 무조건 바로 **"1. 종합 진단 총평"**부터 글을 시작하세요.
 4. 분량 제한 표현을 리포트 내용에 언급하지 마세요. (예: '(300자 이내)')
+5. **구분선(---, ***, ===) 절대 사용 금지** - 공간 낭비됨
+6. **불필요한 빈 줄 삽입 금지** - 섹션 사이에 빈 줄 넣지 마세요
+7. **반드시 1800자 이내로 작성** - 초과 시 인쇄가 잘리므로 엄수
 
 [리포트 구성 및 분량 제한]
 1. **종합 진단 총평** (300자 이내)
    - 업력, 신용, 매출, 우대사항을 종합하여 현재 경영 상황(생존/성장/위기)을 정의하고, 사장님이 현재 어떤 마음으로 지원을 기다리고 있는지 전체적인 소견을 기술하세요.
 
-2. **사업 생애주기 및 위기 진단** (250자 이내)
+2. **사업 생애주기 및 위기 진단** (300자 이내)
    - 설립일과 매출 추이를 근거로 단계(창업-성장-쇠퇴-재도약)를 확정하고, 해당 시기에 겪는 일반적인 어려움 중 사장님이 특히 '도움이 필요하다'고 표현한 부분과 연결하여 분석하세요.
 
 3. **중점 지원 분야 분석 (심층 진단)** (400자 이내)
@@ -295,8 +417,9 @@
 4. **실무 비서의 맞춤 지원사업 매칭** (500자 내외)
    - [금융]: 신용점수와 기보증금액을 고려하여, 현실적으로 신청 가능한 서울시 자금(특별보증, 육성자금 등)을 추천하세요.
    - [비금융]: 사장님이 강한 니즈를 보인 분야(3번 내용)를 해소할 수 있는 '자영업 클리닉', '현장 컨설팅', '전문가 멘토링' 등을 구체적으로 매칭하세요.
+   - **작성 형식**: "[금융]: 내용..." 형태로 라벨 뒤에 바로 내용을 이어쓰고, 금융 내용이 끝나면 줄바꿈 후 "[비금융]: 내용..." 형태로 작성하세요.
 
-5. **격려 및 한마디** (250자 이내)
+5. **격려 및 한마디** (300자 이내)
    - 사장님의 고민(notes)에 깊이 공감하고, 지금 당장 매장에서 실행해볼 수 있는 'One-Point Lesson'과 따뜻한 응원을 전하세요.
 
 [상담 데이터]
@@ -312,9 +435,18 @@
                     const listData = await listResp.json();
                     if (listData.error) throw new Error(listData.error.message);
 
-                    const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
-                    const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
-                    
+                    // 모델 목록에서 gemini-1.5 버전 찾기 (2.5 제외)
+                    const generativeModels = listData.models.filter(m =>
+                        m.supportedGenerationMethods.includes('generateContent') &&
+                        !m.name.includes('embedding') &&
+                        !m.name.includes('aqa')
+                    );
+                    const model15 = generativeModels.find(m => m.name.includes('1.5-flash')) ||
+                        generativeModels.find(m => m.name.includes('1.5-pro')) ||
+                        generativeModels.find(m => m.name.includes('1.5'));
+                    const bestModel = model15 || generativeModels[0];
+
+                    console.log('사용할 모델:', bestModel.name); // 디버깅용
                     setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 리포트 작성 중...`);
 
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
@@ -322,14 +454,18 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
                     });
-                    
+
                     const data = await response.json();
+                    console.log('API 응답:', data); // 디버깅용
                     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                         setAiResponse(data.candidates[0].content.parts[0].text);
                         setViewMode('report');
                         window.scrollTo(0, 0);
-                    } else { throw new Error("분석 결과가 비어있습니다."); }
-                } catch (error) { alert(`오류 발생: ${error.message}`); } 
+                    } else {
+                        console.error('응답 오류:', data);
+                        throw new Error(`분석 결과가 비어있습니다. 상세: ${JSON.stringify(data.error || data.promptFeedback || '알 수 없음')}`);
+                    }
+                } catch (error) { alert(`오류 발생: ${error.message}`); }
                 finally { setIsAnalyzing(false); setAnalysisStatus(''); }
             };
 
@@ -340,7 +476,7 @@
                             <h1 className="text-3xl font-black text-slate-900 tracking-tight">소상공인 지원 전문가 진단 리포트</h1>
                             <p className="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
                         </div>
-                        
+
                         {/* [수정] 칭찬해주신 '기본정보 요약 그리드' 적용 */}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
@@ -379,8 +515,8 @@
                             <Icon name="shield-check" size={14} className="text-emerald-400" />
                             <span className="font-bold">Safe Connect Mode</span>
                             <div className="w-[1px] h-3 bg-slate-600 mx-1"></div>
-                            <input 
-                                type="password" placeholder="Google API Key 입력" 
+                            <input
+                                type="password" placeholder="Google API Key 입력"
                                 className="bg-transparent border-none outline-none text-white placeholder-slate-400 w-32 focus:w-64 transition-all"
                                 value={apiKey} onChange={(e) => setApiKey(e.target.value)}
                             />
@@ -406,17 +542,17 @@
                             <section>
                                 <div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">1. 기본정보(대표자, 사업체)</h2></div>
                                 <div className="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">출생년도</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.birthYear} onChange={(e) => setFormData({...formData, birthYear: e.target.value})}><option value="">년도 선택</option>{years.map(y => <option key={y} value={y}>{y}년</option>)}</select></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" placeholder="점수 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.niceScore} onChange={(e) => setFormData({...formData, niceScore: e.target.value})} /></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" placeholder="금액 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.guaranteedAmount} onChange={(e) => setFormData({...formData, guaranteedAmount: e.target.value})} /></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.foundationDate} onChange={(e) => setFormData({...formData, foundationDate: e.target.value})} /></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" placeholder="업종 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.sector} onChange={(e) => setFormData({...formData, sector: e.target.value})} /></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" placeholder="인원 수" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.employeeCount} onChange={(e) => setFormData({...formData, employeeCount: e.target.value})} /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">출생년도</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.birthYear} onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}><option value="">년도 선택</option>{years.map(y => <option key={y} value={y}>{y}년</option>)}</select></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" placeholder="점수 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.niceScore} onChange={(e) => setFormData({ ...formData, niceScore: e.target.value })} /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" placeholder="금액 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.guaranteedAmount} onChange={(e) => setFormData({ ...formData, guaranteedAmount: e.target.value })} /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.foundationDate} onChange={(e) => setFormData({ ...formData, foundationDate: e.target.value })} /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" placeholder="업종 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value })} /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" placeholder="인원 수" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.employeeCount} onChange={(e) => setFormData({ ...formData, employeeCount: e.target.value })} /></div>
                                 </div>
                                 <div className="revenue-box mt-8 flex flex-wrap items-center gap-6 p-5 bg-slate-50 rounded-sm border border-slate-100">
                                     <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
                                     {["감소 후 정체", "지속적인 감소", "현상유지", "증가 후 정체", "지속적인 증가"].map((opt) => (
-                                        <label key={opt} className="flex items-center gap-2.5 cursor-pointer group"><input type="radio" name="revenue" className="w-5 h-5 accent-[#0055A5]" checked={formData.revenueStatus === opt} onChange={() => setFormData({...formData, revenueStatus: opt})} /><span className={`text-sm font-bold ${formData.revenueStatus === opt ? 'text-[#0055A5]' : 'text-slate-500'}`}>{opt}</span></label>
+                                        <label key={opt} className="flex items-center gap-2.5 cursor-pointer group"><input type="radio" name="revenue" className="w-5 h-5 accent-[#0055A5]" checked={formData.revenueStatus === opt} onChange={() => setFormData({ ...formData, revenueStatus: opt })} /><span className={`text-sm font-bold ${formData.revenueStatus === opt ? 'text-[#0055A5]' : 'text-slate-500'}`}>{opt}</span></label>
                                     ))}
                                 </div>
                             </section>
@@ -433,7 +569,7 @@
                                                     {questions.slice(cat.startIdx, cat.startIdx + cat.count).map((q, qIdx) => (
                                                         <tr key={q} className="border-b border-slate-100 hover:bg-slate-50/30 transition-colors">
                                                             {qIdx === 0 && (<td rowSpan={cat.count} className="p-4 align-middle font-black text-sm text-[#0055A5] border-r border-slate-100 bg-slate-50/20 text-center text-center-print whitespace-pre-wrap">{cat.name === "매장 운영·관리" ? <span>매장 운영·<br className="screen-only" />관리</span> : cat.name === "법률·노무·세무" ? <span>법률·노무·<br className="screen-only" />세무</span> : cat.name}</td>)}
-                                                            <td className="p-4 text-base text-slate-700 font-medium leading-snug text-center-print">{q}</td> 
+                                                            <td className="p-4 text-base text-slate-700 font-medium leading-snug text-center-print">{q}</td>
                                                             {[1, 2, 3, 4].map(score => (<td key={score} className="p-4 text-center"><button onClick={() => handleScoreChange(cat.startIdx + qIdx, score)} className={`w-9 h-9 rounded-sm border transition-all text-sm font-black ${formData.scores[cat.startIdx + qIdx] === score ? 'bg-[#0055A5] border-[#0055A5] text-white shadow-md' : 'bg-white border-slate-200 text-slate-300 hover:border-slate-400 hover:text-slate-500'}`}>{score}</button></td>))}
                                                         </tr>
                                                     ))}
@@ -446,11 +582,11 @@
 
                             <div className="bottom-grid grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch">
                                 <section className="flex flex-col"><div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">3. 우대사항 체크</h2></div><div className="benefit-grid space-y-1.5">{benefitOptions.map(item => (<label key={item.key} className={`flex items-start gap-3 px-4 py-2.5 rounded-sm border transition-all cursor-pointer group ${formData.benefits[item.key] ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100 hover:bg-slate-50'}`}><input type="checkbox" className="mt-0.5 w-5 h-5 accent-[#0055A5]" checked={formData.benefits[item.key]} onChange={() => toggleBenefit(item.key)} /><span className="text-sm font-bold leading-tight group-hover:text-slate-900 transition-colors"><span className={`${formData.benefits[item.key] ? 'text-[#0055A5]' : 'text-slate-600'} screen-only`}>{item.label}</span><span className={`${formData.benefits[item.key] ? 'text-[#0055A5]' : 'text-slate-600'} print-only`}>{item.label.split('(')[0].trim()}</span></span></label>))}</div></section>
-                                <section className="flex flex-col"><div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">※ 기타 애로사항</h2></div><textarea className="notes-area w-full flex-grow p-5 border border-slate-200 rounded-sm text-base bg-slate-50/50 focus:ring-1 focus:ring-[#0055A5] outline-none resize-none font-medium leading-relaxed placeholder:text-slate-300" placeholder="구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요." value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} /></section>
+                                <section className="flex flex-col"><div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">※ 기타 애로사항</h2></div><textarea className="notes-area w-full flex-grow p-5 border border-slate-200 rounded-sm text-base bg-slate-50/50 focus:ring-1 focus:ring-[#0055A5] outline-none resize-none font-medium leading-relaxed placeholder:text-slate-300" placeholder="구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요." value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} /></section>
                             </div>
 
                             <div className="flex justify-between items-center pt-10 border-t border-slate-200 no-print">
-                                <button onClick={() => setFormData({...formData, scores: Array(11).fill(0), notes: '', benefits: Object.fromEntries(Object.keys(formData.benefits).map(k => [k, false]))})} className="flex items-center gap-2 text-slate-400 hover:text-red-500 font-black text-sm transition-colors"><Icon name="rotate-ccw" size={16} /> 리셋하기</button>
+                                <button onClick={() => setFormData({ ...formData, scores: Array(11).fill(0), notes: '', benefits: Object.fromEntries(Object.keys(formData.benefits).map(k => [k, false])) })} className="flex items-center gap-2 text-slate-400 hover:text-red-500 font-black text-sm transition-colors"><Icon name="rotate-ccw" size={16} /> 리셋하기</button>
                                 <div className="flex gap-4">
                                     <button onClick={runRealAIAnalysis} disabled={isAnalyzing} className={`flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white rounded-sm font-black shadow-xl hover:bg-emerald-700 transition-all text-lg ${isAnalyzing ? 'opacity-50' : ''}`}><Icon name={isAnalyzing ? "loader-2" : "sparkles"} size={22} className={isAnalyzing ? "animate-spin" : ""} />{isAnalyzing ? analysisStatus : "AI 진단 시작"}</button>
                                     <button onClick={() => window.print()} className="flex items-center gap-3 px-10 py-4 bg-[#0055A5] text-white rounded-sm font-black shadow-xl hover:bg-[#004488] transition-all transform active:scale-95 text-lg"><Icon name="printer" size={22} /> 진단 리포트 인쇄</button>
@@ -466,6 +602,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
-
-
