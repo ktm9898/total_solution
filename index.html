@@ -338,6 +338,87 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
+        // ========== Google Sheets 지식 DB 설정 ==========
+        // [금융] 지원사업 시트 ID와 [비금융] 지원사업 시트 ID를 설정합니다.
+        // 시트는 "공개" 또는 "링크가 있는 모든 사용자가 보기 가능"으로 설정되어야 합니다.
+        // 형식: https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit
+        const KNOWLEDGE_SHEETS = {
+            financial: {
+                sheetId: '', // [금융] 지원사업 시트 ID 입력
+                sheetName: 'Sheet1', // 시트 탭 이름
+                description: '금융 지원사업'
+            },
+            nonFinancial: {
+                sheetId: '', // [비금융] 지원사업 시트 ID 입력
+                sheetName: 'Sheet1', // 시트 탭 이름
+                description: '비금융 지원사업'
+            }
+        };
+
+        // Google Sheets API v4를 사용하여 데이터 가져오기 (API Key 필요)
+        const fetchSheetData = async (sheetId, sheetName, apiKey) => {
+            if (!sheetId || !apiKey) return null;
+            try {
+                // Google Sheets API v4 endpoint
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(sheetName)}?key=${apiKey}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || '시트를 불러올 수 없습니다.');
+                }
+                const data = await response.json();
+                return parseSheetsData(data.values);
+            } catch (error) {
+                console.warn(`시트 로드 실패 (${sheetId}):`, error);
+                return null;
+            }
+        };
+
+        // Google Sheets API 응답을 객체 배열로 변환
+        const parseSheetsData = (values) => {
+            if (!values || values.length < 2) return [];
+
+            const headers = values[0];
+            const data = [];
+            for (let i = 1; i < values.length; i++) {
+                const row = {};
+                headers.forEach((header, idx) => {
+                    row[header] = values[i][idx] || '';
+                });
+                data.push(row);
+            }
+            return data;
+        };
+
+        // 지원사업 데이터를 프롬프트용 텍스트로 변환
+        const formatKnowledgeForPrompt = (financialData, nonFinancialData) => {
+            let knowledgeText = '';
+
+            if (financialData && financialData.length > 0) {
+                knowledgeText += '\n\n[사전지식: 금융 지원사업 DB]\n';
+                knowledgeText += '아래는 현재 운영 중인 금융 지원사업 목록입니다. 고객 조건에 맞는 사업을 매칭할 때 이 정보를 최우선으로 참고하세요:\n';
+                financialData.forEach((row, idx) => {
+                    const values = Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(' | ');
+                    knowledgeText += `${idx + 1}. ${values}\n`;
+                });
+            }
+
+            if (nonFinancialData && nonFinancialData.length > 0) {
+                knowledgeText += '\n\n[사전지식: 비금융 지원사업 DB]\n';
+                knowledgeText += '아래는 현재 운영 중인 비금융 지원사업(컨설팅, 교육, 멘토링 등) 목록입니다. 고객의 니즈에 맞는 사업을 매칭할 때 이 정보를 최우선으로 참고하세요:\n';
+                nonFinancialData.forEach((row, idx) => {
+                    const values = Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(' | ');
+                    knowledgeText += `${idx + 1}. ${values}\n`;
+                });
+            }
+
+            if (knowledgeText) {
+                knowledgeText += '\n[중요] 위 사전지식 DB에 있는 지원사업을 우선적으로 추천하고, 구체적인 사업명과 내용을 언급하세요. DB에 없는 일반적인 정보는 보조적으로만 활용하세요.\n';
+            }
+
+            return knowledgeText;
+        };
+
         const App = () => {
             const currentYear = new Date().getFullYear();
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
@@ -347,6 +428,20 @@
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
+
+            // Google Sheets 지식 DB 상태
+            const [sheetConfig, setSheetConfig] = useState({
+                financialSheetId: localStorage.getItem('financial_sheet_id') || '',
+                nonFinancialSheetId: localStorage.getItem('nonfinancial_sheet_id') || ''
+            });
+            const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null });
+            const [showSheetConfig, setShowSheetConfig] = useState(false);
+
+            // 시트 설정 저장
+            useEffect(() => {
+                localStorage.setItem('financial_sheet_id', sheetConfig.financialSheetId);
+                localStorage.setItem('nonfinancial_sheet_id', sheetConfig.nonFinancialSheetId);
+            }, [sheetConfig]);
 
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
 
@@ -408,20 +503,42 @@
                 if (!apiKey) { alert('상단 Safe Connect Mode에 구글 API 키를 먼저 입력해주세요.'); return; }
 
                 setIsAnalyzing(true);
+                setAnalysisStatus('지식 DB 로드 중...');
+
+                // ========== Google Sheets 지식 DB 로드 ==========
+                let financialData = null;
+                let nonFinancialData = null;
+
+                if (sheetConfig.financialSheetId) {
+                    setAnalysisStatus('금융 지원사업 DB 로드 중...');
+                    financialData = await fetchSheetData(sheetConfig.financialSheetId, 'Sheet1', apiKey);
+                    console.log('금융 지원사업 DB:', financialData);
+                }
+
+                if (sheetConfig.nonFinancialSheetId) {
+                    setAnalysisStatus('비금융 지원사업 DB 로드 중...');
+                    nonFinancialData = await fetchSheetData(sheetConfig.nonFinancialSheetId, 'Sheet1', apiKey);
+                    console.log('비금융 지원사업 DB:', nonFinancialData);
+                }
+
+                // 지식 DB를 프롬프트용 텍스트로 변환
+                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData);
+
                 setAnalysisStatus('AI 서버에 연결 중...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
 
-                // [수정된 프롬프트] 전문 컨설턴트 톤, 객관적/명확한 문어체
+                // [수정된 프롬프트] 전문 컨설턴트 톤, 객관적/명확한 문어체 + 사전지식 DB 포함
                 const promptText = `
 당신은 서울신용보증재단의 경영컨설팅 전문가입니다. 
 제공된 자가진단 데이터와 사장님의 주관식 의견을 바탕으로 전문적이고 정제된 '소상공인 경영 진단 리포트'를 작성하세요.
-
+${knowledgeText}
 [핵심 지침]
 1. 말투: 지나치게 친근하거나 감성적인 호소는 배제합니다. 전문 컨설턴트로서 신뢰감을 주는 정중하고 명확한 문어체(~함, ~임, ~입니다)를 사용하세요.
 2. 분석 우선순위: 섹션 3번 분석 시, 객관식 점수뿐만 아니라 '기타 애로사항(notes)'에 기재된 내용을 최우선으로 반영하여 분석하세요. 사장님의 직접적인 목소리가 가장 시급한 현안입니다.
 3. 데이터 해석: 1~4점의 점수를 직접 언급하지 마세요. 대신 "개선 의지가 강력한", "전문적 지원이 시급한", "현안 해결이 우선시되는" 등의 표현을 사용합니다. 이 숫자는 점수가 아닙니다. 합계 등 의미가 없습니다. 1에서 4로 갈수록 더 지원이 필요하다고 느낀다는 의미일 뿐입니다.
 4. 서식: 섹션 제목은 반드시 "1. 기본정보 분석", "2. 사업 생애주기 진단" 이런 식으로 숫자와 점으로만 시작하세요. ##이나 **를 사용하지 마세요.
+5. **사전지식 DB 활용**: 위에 제공된 [사전지식: 금융/비금융 지원사업 DB]가 있다면, 섹션 4번 작성 시 해당 DB의 구체적인 사업명과 내용을 최우선으로 인용하세요.
 
 [필수 금지 사항]
 1. 리포트 제목, 인사말, 날짜, 서명 등 불필요한 서두와 결미를 생략하고 바로 본론으로 들어갑니다.
@@ -442,9 +559,10 @@
 - 사장님이 겪고 있는 경영적 한계의 본질이 무엇인지 진단하세요. (예: "주관식 의견에 기술된 임대료 부담과 매출 정체는 단순 마케팅 문제가 아닌 수익 구조의 근본적 체질 개선이 필요한 신호임")
 
 4. 맞춤형 지원사업 매칭 (500자)
-- [금융]: NICE 점수와 기보증 상황에 최적화된 서울시 정책자금(중소기업육성자금, 특별보증 등)을 구체적으로 매칭하세요. 
-- [비금융]: 3번 항목에서 도출된 문제를 해결할 '자영업 클리닉', '현장 컨설팅', '전문가 멘토링' 등을 연결하세요.
+- [금융]: 위 사전지식 DB에 있는 금융 지원사업 중 NICE 점수와 기보증 상황에 최적화된 사업을 구체적인 사업명으로 매칭하세요. 
+- [비금융]: 위 사전지식 DB에 있는 비금융 지원사업 중 3번 항목에서 도출된 문제를 해결할 수 있는 사업을 구체적인 사업명으로 연결하세요.
 - 형식: [금융]으로 시작하는 문단과 [비금융]으로 시작하는 문단을 줄바꿈하여 분리하세요.
+- **중요**: 사전지식 DB가 제공된 경우, 반드시 해당 DB의 사업명을 인용하고 일반적인 정보는 보조적으로만 사용하세요.
 
 5. 종합 정리 (300자)
 - 전체 진단을 종합하여 경영 효율화 및 리스크 관리를 위한 핵심 제언을 기술하세요. 감성적 위로보다는 전문가로서의 실천적 대안(One-Point Lesson)을 제시하며 마무리합니다.
@@ -476,6 +594,7 @@
 
                     const data = await response.json();
                     console.log('API 응답:', data); // 디버깅용
+                    console.log('사용된 프롬프트 (지식DB 포함):', promptText); // 디버깅용
                     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                         setAiResponse(data.candidates[0].content.parts[0].text);
                         setViewMode('report');
@@ -530,6 +649,18 @@
             return (
                 <div className="min-h-screen py-8 px-4 relative">
                     <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
+                        {/* 지식 DB 설정 버튼 */}
+                        <button
+                            onClick={() => setShowSheetConfig(!showSheetConfig)}
+                            className={`text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg transition-all ${showSheetConfig ? 'bg-amber-500 text-white' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+                        >
+                            <Icon name="database" size={14} className={showSheetConfig ? 'text-white' : 'text-amber-400'} />
+                            <span className="font-bold">지식 DB</span>
+                            {(sheetConfig.financialSheetId || sheetConfig.nonFinancialSheetId) &&
+                                <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>
+                            }
+                        </button>
+
                         <div className="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
                             <Icon name="shield-check" size={14} className="text-emerald-400" />
                             <span className="font-bold">Safe Connect Mode</span>
@@ -541,6 +672,44 @@
                             />
                         </div>
                     </div>
+
+                    {/* 지식 DB 설정 패널 (토글) */}
+                    {showSheetConfig && (
+                        <div className="max-w-5xl mx-auto mb-4 no-print bg-slate-800 text-white rounded-lg p-4 shadow-xl border border-slate-700">
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-600">
+                                <Icon name="book-open" size={16} className="text-amber-400" />
+                                <span className="font-black text-sm">Google Sheets 지식 DB 설정</span>
+                                <span className="text-xs text-slate-400 ml-2">(동일한 Google API Key 사용)</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-amber-300">[금융] 지원사업 시트 ID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="예: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                                        className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400"
+                                        value={sheetConfig.financialSheetId}
+                                        onChange={(e) => setSheetConfig({ ...sheetConfig, financialSheetId: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-slate-400">시트 URL에서 /d/ 와 /edit 사이의 ID를 복사하세요</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-emerald-300">[비금융] 지원사업 시트 ID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="예: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                                        className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400"
+                                        value={sheetConfig.nonFinancialSheetId}
+                                        onChange={(e) => setSheetConfig({ ...sheetConfig, nonFinancialSheetId: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-slate-400">컨설팅, 교육, 멘토링 등 비금융 지원사업 목록</p>
+                                </div>
+                            </div>
+                            <div className="mt-3 pt-2 border-t border-slate-600 text-xs text-slate-400">
+                                <p>💡 <b className="text-white">사용 방법:</b> Google Cloud Console에서 Sheets API를 활성화하고, 시트를 API Key로 접근 가능하게 설정하세요.</p>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="max-w-5xl mx-auto bg-white shadow-2xl border border-slate-200 overflow-hidden print-container rounded-sm">
                         <div className="p-10 border-b border-slate-100 bg-white relative">
