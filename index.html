@@ -21,6 +21,17 @@
             display: none;
         }
 
+        /* 화면용 AI 텍스트 헤더 스타일 */
+        .ai-text-header {
+            font-size: 1.1rem;
+            font-weight: 900;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 0.25rem;
+        }
+
         /* [중요] 통합버전18의 인쇄 설정 100% 원복 (입력 페이지 인쇄 보존용) */
         @media print {
             @page {
@@ -145,12 +156,29 @@
 
             .revenue-box {
                 margin-top: 0.5rem !important;
-                padding: 0.4rem !important;
-                gap: 1rem !important;
+                padding: 0.4rem 0.8rem !important;
+                gap: 0.6rem !important;
+                flex-wrap: nowrap !important;
+                justify-content: space-between !important;
             }
 
             .revenue-box span {
-                font-size: 8.5pt !important;
+                font-size: 7.5pt !important;
+            }
+
+            .revenue-box input {
+                width: 70px !important;
+                padding: 0.2rem 0.3rem !important;
+                font-size: 7.5pt !important;
+            }
+
+            .revenue-box label {
+                gap: 0.2rem !important;
+            }
+
+            .revenue-box input[type="radio"] {
+                width: 12px !important;
+                height: 12px !important;
             }
 
             .legend-box {
@@ -186,6 +214,8 @@
                 width: 1.2rem !important;
                 height: 1.2rem !important;
                 font-size: 8pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             .bottom-grid {
@@ -321,7 +351,7 @@
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
 
             const [formData, setFormData] = useState({
-                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', revenueStatus: '', notes: '',
+                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '',
                 benefits: { jobIncrease: false, jobCreation: false, intellectualProperty: false, socialInsurance: false, lowIncome: false, socialCare: false, smallBusiness: false, revenueDecrease: false },
                 scores: Array(11).fill(0)
             });
@@ -335,7 +365,7 @@
                 { key: 'jobCreation', label: '일자리 창출(청년, 여성, 고령자, 장애인 고용)' },
                 { key: 'intellectualProperty', label: '지식재산권(특허, 실용신안) 보유' },
                 { key: 'socialInsurance', label: '사회보험 가입(1인 자영업자 고용보험 포함)' },
-                { key: 'lowIncome', label: '저소득(연 59백만원)' },
+                { key: 'lowIncome', label: '저소득(연 59백만원 이하)' },
                 { key: 'socialCare', label: '사회적배려(실직자, 장애인, 여성가장, 한부모·다둥이·다문화가정)' },
                 { key: 'smallBusiness', label: '영세자영업(간이과세자)' },
                 { key: 'revenueDecrease', label: '매출감소(직전 분기·반기 대비 신고매출액 20% 이상 감소)' }
@@ -354,9 +384,9 @@
                     if (trimmed === '' || trimmed.match(/^[-*=_]{3,}$/)) return false;
                     return true;
                 }).map((line, i) => {
-                    // 헤더 인식
-                    if (line.match(/^(#|\*\*1\.|\*\*2\.|\*\*3\.|\*\*4\.|\*\*5\.)/)) {
-                        const cleanLine = line.replace(/#/g, '').replace(/\*\*/g, '').trim();
+                    // 헤더 인식 (숫자로 시작하는 제목 또는 ## 등)
+                    if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
+                        const cleanLine = line.replace(/^#+\s*/g, '').replace(/\*\*/g, '').trim();
                         return <div key={i} className="ai-text-header">{cleanLine}</div>;
                     }
                     // 본문
@@ -391,36 +421,37 @@
 1. 말투: 지나치게 친근하거나 감성적인 호소는 배제합니다. 전문 컨설턴트로서 신뢰감을 주는 정중하고 명확한 문어체(~함, ~임, ~입니다)를 사용하세요.
 2. 분석 우선순위: 섹션 3번 분석 시, 객관식 점수뿐만 아니라 '기타 애로사항(notes)'에 기재된 내용을 최우선으로 반영하여 분석하세요. 사장님의 직접적인 목소리가 가장 시급한 현안입니다.
 3. 데이터 해석: 1~4점의 점수를 직접 언급하지 마세요. 대신 "개선 의지가 강력한", "전문적 지원이 시급한", "현안 해결이 우선시되는" 등의 표현을 사용합니다. 이 숫자는 점수가 아닙니다. 합계 등 의미가 없습니다. 1에서 4로 갈수록 더 지원이 필요하다고 느낀다는 의미일 뿐입니다.
-4. 서식: 섹션 제목은 반드시 ## **제목** 형식을 사용하세요.
+4. 서식: 섹션 제목은 반드시 "1. 기본정보 분석", "2. 사업 생애주기 진단" 이런 식으로 숫자와 점으로만 시작하세요. ##이나 **를 사용하지 마세요.
 
 [필수 금지 사항]
 1. 리포트 제목, 인사말, 날짜, 서명 등 불필요한 서두와 결미를 생략하고 바로 본론으로 들어갑니다.
 2. 구분선(---)이나 불필요한 빈 줄을 사용하지 마세요. (공간 최적화)
-3. 전체 분량은 공백 포함 1,800자를 절대 초과할 수 없습니다.
+3. **글자수 절대 준수**: 전체 분량은 공백 포함 정확히 1,800자입니다. 1,750자 미만이면 너무 짧고, 1,850자 초과면 너무 깁니다. 각 섹션별 글자수를 합산하면 정확히 1,800자가 되도록 작성하세요.
 
 [리포트 구성 및 작성 요령]
 
-## **1. 기본정보 분석** (300자 이내)
-- 업종, 출생년도, 신용점수, 기보증금액 등을 바탕으로 사업자의 객관적인 경영 여력을 분석합니다. 특히 신용도와 보증 잔액을 통해 추가 자금 조달의 가능성을 전문가적 시각에서 평가하세요.
+1. 기본정보 분석 (300자)
+- 업종, 출생년도, 신용점수, 기보증금액, 신고매출액 등을 바탕으로 사업자의 객관적인 경영 여력을 분석합니다.
+- **중요**: 기보증금액은 이미 재단의 보증 한도를 사용하고 있다는 의미입니다. 신고매출액 대비 기보증금액이 높을수록 추가 보증 여력이 제한됩니다(매출액 이상은 추가 보증 불가). 이 비율을 감안하여 추가 자금 조달의 가능성을 전문가적 시각에서 평가하세요.
 
-## **2. 사업 생애주기 진단** (300자 이내)
+2. 사업 생애주기 진단 (300자)
 - 설립일과 매출 추이를 근거로 현재 사업의 단계(창업기-성장기-성숙기-재도약기)를 정의합니다. 현재 매출 상태가 해당 생애주기에서 갖는 의미를 짚어주세요.
 
-## **3. 중점 지원 필요분야 분석** (400자 이내)
+3. 중점 지원 필요분야 분석 (400자)
 - 자가진단 고득점 항목과 '기타 애로사항'의 주관식 내용을 통합 분석합니다. 단순히 어떤 지원이 필요하다는 식으로 나열하지 마세요.
 - 사장님이 겪고 있는 경영적 한계의 본질이 무엇인지 진단하세요. (예: "주관식 의견에 기술된 임대료 부담과 매출 정체는 단순 마케팅 문제가 아닌 수익 구조의 근본적 체질 개선이 필요한 신호임")
 
-## **4. 맞춤형 지원사업 매칭** (500자 이내)
+4. 맞춤형 지원사업 매칭 (500자)
 - [금융]: NICE 점수와 기보증 상황에 최적화된 서울시 정책자금(중소기업육성자금, 특별보증 등)을 구체적으로 매칭하세요. 
 - [비금융]: 3번 항목에서 도출된 문제를 해결할 '자영업 클리닉', '현장 컨설팅', '전문가 멘토링' 등을 연결하세요.
-- 형식: [금융]... (내용) / [비금융]... (내용) 형태로 작성하되 섹션 내 줄바꿈을 최소화하세요.
+- 형식: [금융]으로 시작하는 문단과 [비금융]으로 시작하는 문단을 줄바꿈하여 분리하세요.
 
-## **5. 종합 정리** (300자 이내)
+5. 종합 정리 (300자)
 - 전체 진단을 종합하여 경영 효율화 및 리스크 관리를 위한 핵심 제언을 기술하세요. 감성적 위로보다는 전문가로서의 실천적 대안(One-Point Lesson)을 제시하며 마무리합니다.
 
 [상담 데이터]
 - 업종: ${formData.sector} / 설립일: ${formData.foundationDate}
-- NICE: ${formData.niceScore}점 / 기보증: ${formData.guaranteedAmount}만원 / 매출: ${formData.revenueStatus}
+- NICE: ${formData.niceScore}점 / 기보증: ${formData.guaranteedAmount}만원 / 최근1년 신고매출액: ${formData.annualSales || '미입력'}만원 / 매출추이: ${formData.revenueStatus}
 - 우대사항: ${activeBenefits}
 - 자가진단 니즈 점수(11개 항목): ${JSON.stringify(formData.scores)}
 - 기타 애로사항(중요): ${formData.notes || '내용 없음'}
@@ -475,7 +506,7 @@
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">기보증금액</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.guaranteedAmount || "0"}만원</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">설립일자</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.foundationDate || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">종업원수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.employeeCount || "0"}명</span></div>
-                                <div className="report-info-item col-span-2"><span className="text-xs text-slate-500 block report-info-label">매출현황</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.revenueStatus || "-"}</span></div>
+                                <div className="report-info-item col-span-2"><span className="text-xs text-slate-500 block report-info-label">매출현황</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.annualSales || "-"}만원({formData.revenueStatus || "-"})</span></div>
                             </div>
                         </div>
 
@@ -521,7 +552,7 @@
                                     <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none mb-2">소상공인 종합지원을 위한 자가진단</h1>
                                     <p className="text-sm text-slate-500 font-medium">우리 가게 맞춤형 지원사업 매칭을 위한 기초 리포트</p>
                                 </div>
-                                <div className="text-right"><p className="text-xl font-black text-[#0055A5] leading-tight mb-1">내일을 꿈꾸는 사장님께</p><p className="text-sm font-bold text-slate-400">서울신용보증재단</p></div>
+                                <div className="text-right"><p className="text-xl font-black text-[#0055A5] leading-tight mb-1">내일을 꿈꾸는 사장님께</p><p className="text-sm font-bold text-slate-400">서울신용보증재단 용산종합지원센터</p></div>
                             </div>
                         </div>
 
@@ -537,11 +568,19 @@
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" placeholder="업종 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value })} /></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" placeholder="인원 수" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.employeeCount} onChange={(e) => setFormData({ ...formData, employeeCount: e.target.value })} /></div>
                                 </div>
-                                <div className="revenue-box mt-8 flex flex-wrap items-center gap-6 p-5 bg-slate-50 rounded-sm border border-slate-100">
-                                    <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
-                                    {["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map((opt) => (
-                                        <label key={opt} className="flex items-center gap-2.5 cursor-pointer group"><input type="radio" name="revenue" className="w-5 h-5 accent-[#0055A5]" checked={formData.revenueStatus === opt} onChange={() => setFormData({ ...formData, revenueStatus: opt })} /><span className={`text-sm font-bold ${formData.revenueStatus === opt ? 'text-[#0055A5]' : 'text-slate-500'}`}>{opt}</span></label>
-                                    ))}
+                                <div className="revenue-box mt-8 flex flex-wrap items-center gap-10 p-5 bg-slate-50 rounded-sm border border-slate-100">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
+                                        <div className="flex items-center gap-2">
+                                            <input type="number" placeholder="신고매출액 입력" className="w-40 p-2.5 bg-white border border-slate-200 rounded-sm outline-none text-base font-bold text-right focus:ring-1 focus:ring-[#0055A5]" value={formData.annualSales} onChange={(e) => setFormData({ ...formData, annualSales: e.target.value })} />
+                                            <span className="text-xs font-bold text-slate-500">만원/년</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-5">
+                                        {["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map((opt) => (
+                                            <label key={opt} className="flex items-center gap-2 cursor-pointer group"><input type="radio" name="revenue" className="w-4 h-4 accent-[#0055A5]" checked={formData.revenueStatus === opt} onChange={() => setFormData({ ...formData, revenueStatus: opt })} /><span className={`text-sm font-bold ${formData.revenueStatus === opt ? 'text-[#0055A5]' : 'text-slate-500'}`}>{opt}</span></label>
+                                        ))}
+                                    </div>
                                 </div>
                             </section>
 
@@ -577,7 +616,7 @@
                                 <button onClick={() => setFormData({ ...formData, scores: Array(11).fill(0), notes: '', benefits: Object.fromEntries(Object.keys(formData.benefits).map(k => [k, false])) })} className="flex items-center gap-2 text-slate-400 hover:text-red-500 font-black text-sm transition-colors"><Icon name="rotate-ccw" size={16} /> 리셋하기</button>
                                 <div className="flex gap-4">
                                     <button onClick={runRealAIAnalysis} disabled={isAnalyzing} className={`flex items-center gap-3 px-8 py-4 bg-emerald-600 text-white rounded-sm font-black shadow-xl hover:bg-emerald-700 transition-all text-lg ${isAnalyzing ? 'opacity-50' : ''}`}><Icon name={isAnalyzing ? "loader-2" : "sparkles"} size={22} className={isAnalyzing ? "animate-spin" : ""} />{isAnalyzing ? analysisStatus : "AI 진단 시작"}</button>
-                                    <button onClick={() => window.print()} className="flex items-center gap-3 px-10 py-4 bg-[#0055A5] text-white rounded-sm font-black shadow-xl hover:bg-[#004488] transition-all transform active:scale-95 text-lg"><Icon name="printer" size={22} /> 진단 리포트 인쇄</button>
+                                    <button onClick={() => window.print()} className="flex items-center gap-3 px-10 py-4 bg-[#0055A5] text-white rounded-sm font-black shadow-xl hover:bg-[#004488] transition-all transform active:scale-95 text-lg"><Icon name="printer" size={22} /> 설문지 인쇄</button>
                                 </div>
                             </div>
                         </div>
