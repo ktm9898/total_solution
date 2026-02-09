@@ -453,6 +453,8 @@
             });
             const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
+            // 시트 유효성 검증 상태 (실제 로드 성공 여부)
+            const [sheetStatus, setSheetStatus] = useState({ financial: false, nonFinancial: false });
 
             // 시트 설정 저장
             useEffect(() => {
@@ -525,6 +527,7 @@
                 // ========== Google Sheets 지식 DB 로드 ==========
                 let financialData = null;
                 let nonFinancialData = null;
+                let newSheetStatus = { financial: false, nonFinancial: false };
 
                 if (sheetConfig.financialSheetId) {
                     setAnalysisStatus('금융 지원사업 DB 로드 중 (특별보증)...');
@@ -536,18 +539,27 @@
                     console.log('금융 지원사업 DB (Sheet2 - 정책자금):', sheet2Data);
 
                     // Sheet1과 Sheet2 데이터 병합
-                    financialData = [
-                        ...(sheet1Data || []).map(row => ({ ...row, _구분: '특별보증' })),
-                        ...(sheet2Data || []).map(row => ({ ...row, _구분: '정책자금' }))
-                    ];
-                    console.log('금융 지원사업 DB (통합):', financialData);
+                    if (sheet1Data || sheet2Data) {
+                        financialData = [
+                            ...(sheet1Data || []).map(row => ({ ...row, _구분: '특별보증' })),
+                            ...(sheet2Data || []).map(row => ({ ...row, _구분: '정책자금' }))
+                        ];
+                        newSheetStatus.financial = true;
+                        console.log('금융 지원사업 DB (통합):', financialData);
+                    }
                 }
 
                 if (sheetConfig.nonFinancialSheetId) {
                     setAnalysisStatus('비금융 지원사업 DB 로드 중...');
                     nonFinancialData = await fetchSheetData(sheetConfig.nonFinancialSheetId, 'Sheet1', apiKey);
                     console.log('비금융 지원사업 DB:', nonFinancialData);
+                    if (nonFinancialData) {
+                        newSheetStatus.nonFinancial = true;
+                    }
                 }
+
+                // 시트 상태 업데이트
+                setSheetStatus(newSheetStatus);
 
                 // 지식 DB를 프롬프트용 텍스트로 변환
                 const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData);
@@ -703,8 +715,11 @@ ${knowledgeText}
                         >
                             <Icon name="database" size={14} className={showSheetConfig ? 'text-white' : 'text-amber-400'} />
                             <span className="font-bold">지식 DB</span>
-                            {(sheetConfig.financialSheetId || sheetConfig.nonFinancialSheetId) &&
+                            {(sheetStatus.financial || sheetStatus.nonFinancial) &&
                                 <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>
+                            }
+                            {(sheetConfig.financialSheetId || sheetConfig.nonFinancialSheetId) && !(sheetStatus.financial || sheetStatus.nonFinancial) &&
+                                <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">미검증</span>
                             }
                         </button>
 
