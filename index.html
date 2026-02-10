@@ -487,8 +487,8 @@
 
             // Google Sheets 지식 DB 상태
             const [sheetConfig, setSheetConfig] = useState({
-                comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '',
-                referenceSheetId: localStorage.getItem('reference_sheet_id') || ''
+                comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '1XN6oRrydLRALN2INhakmC6ydlGdpWhaXE0roOAxb3ZE',
+                referenceSheetId: localStorage.getItem('reference_sheet_id') || '1XN6oRrydLRALN2INhakmC6ydlGdpWhaXE0roOAxb3ZE'
             });
             const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null, reference: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
@@ -785,7 +785,10 @@ ${knowledgeText}
 
                         {/* [수정] 줄간격 축소된 AI 본문 + [금융]/[비금융] 줄바꿈 강제 제거 후처리 */}
                         <div className="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">
-                            {formatText(aiResponse.replace(/(\[(?:금융|비금융)\])[:\s]*[\r\n]+\s*/g, '$1 '))}
+                            {formatText(aiResponse
+                                .replace(/([^\n])\s*\[비금융\]/g, '$1\n\n[비금융]') // [비금융] 앞에는 반드시 줄바꿈 2번
+                                .replace(/(\[(?:금융|비금융)\])[:\s]*[\r\n]+\s*/g, '$1 ') // [금융]/[비금융] 뒤에는 줄바꿈 제거하고 공백 1개
+                            )}
                         </div>
 
                         <div className="mt-8 pt-6 border-t flex justify-center gap-4 no-print">
