@@ -614,12 +614,17 @@
                 }
 
                 if (sheetConfig.referenceSheetId) {
-                    setAnalysisStatus(`참고자료 DB 로드 중 (${sheetConfig.referenceSheetName})...`);
-                    const refSheetData = await fetchSheetData(sheetConfig.referenceSheetId, sheetConfig.referenceSheetName, apiKey);
-                    console.log(`참고자료 DB (${sheetConfig.referenceSheetName}):`, refSheetData);
-                    if (refSheetData) {
-                        referenceData = refSheetData.map(row => ({ ...row, _구분: '참고자료' }));
-                        newSheetStatus.reference = true;
+                    setAnalysisStatus('참고자료 DB 로드 중 (경기동향·통계·상권)...');
+                    try {
+                        const refSheetData = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet1', apiKey);
+                        console.log('참고자료 DB:', refSheetData);
+                        if (refSheetData) {
+                            referenceData = refSheetData.map(row => ({ ...row, _구분: '참고자료' }));
+                            newSheetStatus.reference = true;
+                        }
+                    } catch (e) {
+                        console.error("참고자료 로드 실패:", e);
+                        alert("참고자료 로드 실패: " + e.message);
                     }
                 }
 
@@ -846,23 +851,6 @@ ${knowledgeText}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-amber-300">참고자료 시트 ID</label>
-                                    <input
-                                        type="text" placeholder="구글 시트 ID"
-                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-amber-400 focus:outline-none"
-                                        value={sheetConfig.referenceSheetId}
-                                        onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetId: e.target.value })}
-                                    />
-                                    <label className="text-xs font-bold text-amber-300 mt-2 block">참고자료 시트 탭 이름</label>
-                                    <input
-                                        type="text" placeholder="기본값: Sheet1"
-                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-amber-400 focus:outline-none"
-                                        value={sheetConfig.referenceSheetName}
-                                        onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetName: e.target.value })}
-                                    />
-                                    <p className="text-[10px] text-slate-400 mt-1">엑셀 파일 하단의 탭 이름을 정확히 입력하세요. (기본값: Sheet1)</p>
-                                </div>
-                                <div className="space-y-1">
                                     <label className="text-xs font-bold text-amber-300">종합지원 시트 ID</label>
                                     <input
                                         type="text"
@@ -872,6 +860,17 @@ ${knowledgeText}
                                         onChange={(e) => setSheetConfig({ ...sheetConfig, comprehensiveSheetId: e.target.value })}
                                     />
                                     <p className="text-[10px] text-slate-400">Sheet1: 특별보증 | Sheet2: 정책자금 | Sheet3: 비금융 지원사업</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-emerald-300">참고자료 시트 ID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="예: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-emerald-400 focus:outline-none"
+                                        value={sheetConfig.referenceSheetId}
+                                        onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetId: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-slate-400">경기동향, 각종 통계, 상권 자료 등 진단 참고자료 (Sheet1)</p>
                                 </div>
 
                             </div>
