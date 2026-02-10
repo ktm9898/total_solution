@@ -643,7 +643,7 @@
                 // 지식 DB를 프롬프트용 텍스트로 변환
                 const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData, referenceData);
 
-                setAnalysisStatus('AI 서버에 연결 중...');
+                setAnalysisStatus('진단 데이터를 분석하고 있습니다...');
 
                 const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
 
