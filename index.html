@@ -645,7 +645,7 @@
 
                 setAnalysisStatus('진단 데이터를 분석하고 있습니다...');
 
-                const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k).label).join(', ');
+                const activeBenefits = Object.keys(formData.benefits).filter(k => formData.benefits[k]).map(k => benefitOptions.find(b => b.key === k)?.label || k).join(', ');
 
 
                 // [수정된 프롬프트] 전문 컨설턴트 톤, 객관적/명확한 문어체 + 사전지식 DB 포함
