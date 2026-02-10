@@ -399,8 +399,8 @@
                 const data = await response.json();
                 return parseSheetsData(data.values);
             } catch (error) {
-                console.warn(`시트 로드 실패 (${sheetId}):`, error);
-                return null;
+                console.error(`시트 로드 실패 (${sheetId}):`, error);
+                throw error; // 에러를 상위로 전파하여 UI에서 알림 표시
             }
         };
 
@@ -582,34 +582,39 @@
                 let newSheetStatus = { comprehensive: false, reference: false };
 
                 if (sheetConfig.comprehensiveSheetId) {
-                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet1: 특별보증)...');
-                    const sheet1Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet1', apiKey);
-                    console.log('종합지원 DB (Sheet1 - 특별보증):', sheet1Data);
+                    try {
+                        setAnalysisStatus('종합지원 DB 로드 중 (Sheet1: 특별보증)...');
+                        const sheet1Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet1', apiKey);
+                        console.log('종합지원 DB (Sheet1 - 특별보증):', sheet1Data);
 
-                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet2: 정책자금)...');
-                    const sheet2Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet2', apiKey);
-                    console.log('종합지원 DB (Sheet2 - 정책자금):', sheet2Data);
+                        setAnalysisStatus('종합지원 DB 로드 중 (Sheet2: 정책자금)...');
+                        const sheet2Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet2', apiKey);
+                        console.log('종합지원 DB (Sheet2 - 정책자금):', sheet2Data);
 
-                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet3: 비금융 지원사업)...');
-                    const sheet3Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet3', apiKey);
-                    console.log('종합지원 DB (Sheet3 - 비금융 지원사업):', sheet3Data);
+                        setAnalysisStatus('종합지원 DB 로드 중 (Sheet3: 비금융 지원사업)...');
+                        const sheet3Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet3', apiKey);
+                        console.log('종합지원 DB (Sheet3 - 비금융 지원사업):', sheet3Data);
 
-                    // Sheet1과 Sheet2 데이터 병합 (금융)
-                    if (sheet1Data || sheet2Data) {
-                        financialData = [
-                            ...(sheet1Data || []).map(row => ({ ...row, _구분: '특별보증' })),
-                            ...(sheet2Data || []).map(row => ({ ...row, _구분: '정책자금' }))
-                        ];
-                        console.log('금융 지원사업 DB (통합):', financialData);
-                    }
+                        // Sheet1과 Sheet2 데이터 병합 (금융)
+                        if (sheet1Data || sheet2Data) {
+                            financialData = [
+                                ...(sheet1Data || []).map(row => ({ ...row, _구분: '특별보증' })),
+                                ...(sheet2Data || []).map(row => ({ ...row, _구분: '정책자금' }))
+                            ];
+                            console.log('금융 지원사업 DB (통합):', financialData);
+                        }
 
-                    // Sheet3 데이터 (비금융)
-                    if (sheet3Data) {
-                        nonFinancialData = sheet3Data;
-                    }
+                        // Sheet3 데이터 (비금융)
+                        if (sheet3Data) {
+                            nonFinancialData = sheet3Data;
+                        }
 
-                    if (sheet1Data || sheet2Data || sheet3Data) {
-                        newSheetStatus.comprehensive = true;
+                        if (sheet1Data || sheet2Data || sheet3Data) {
+                            newSheetStatus.comprehensive = true;
+                        }
+                    } catch (e) {
+                        console.error("종합지원 DB 로드 실패:", e);
+                        alert("종합지원 DB 로드 실패: " + e.message);
                     }
                 }
 
