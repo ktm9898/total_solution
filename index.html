@@ -452,14 +452,24 @@
             });
             const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null, reference: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
-            // 시트 유효성 검증 상태 (실제 로드 성공 여부)
-            const [sheetStatus, setSheetStatus] = useState({ comprehensive: false, reference: false });
+            // 시트 유효성 검증 상태 (실제 로드 성공 여부) - localStorage에 저장하여 새로고침 시에도 유지
+            const [sheetStatus, setSheetStatus] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('sheet_status');
+                    return saved ? JSON.parse(saved) : { comprehensive: false, reference: false };
+                } catch { return { comprehensive: false, reference: false }; }
+            });
 
             // 시트 설정 저장
             useEffect(() => {
                 localStorage.setItem('comprehensive_sheet_id', sheetConfig.comprehensiveSheetId);
                 localStorage.setItem('reference_sheet_id', sheetConfig.referenceSheetId);
             }, [sheetConfig]);
+
+            // 시트 검증 상태 저장
+            useEffect(() => {
+                localStorage.setItem('sheet_status', JSON.stringify(sheetStatus));
+            }, [sheetStatus]);
 
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
 
