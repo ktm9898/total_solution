@@ -339,19 +339,20 @@
         };
 
         // ========== Google Sheets 지식 DB 설정 ==========
-        // [금융] 지원사업 시트 ID와 [비금융] 지원사업 시트 ID를 설정합니다.
+        // [종합지원] 시트: Sheet1(특별보증), Sheet2(정책자금), Sheet3(비금융 지원사업)
+        // [참고자료] 시트: Sheet1(경기동향, 통계, 상권 자료 등)
         // 시트는 "공개" 또는 "링크가 있는 모든 사용자가 보기 가능"으로 설정되어야 합니다.
         // 형식: https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit
         const KNOWLEDGE_SHEETS = {
-            financial: {
-                sheetId: '', // [금융] 지원사업 시트 ID 입력
-                sheetName: 'Sheet1', // 시트 탭 이름
-                description: '금융 지원사업'
+            comprehensive: {
+                sheetId: '', // [종합지원] 시트 ID 입력
+                sheets: ['Sheet1', 'Sheet2', 'Sheet3'], // 특별보증, 정책자금, 비금융 지원사업
+                description: '종합지원 (금융+비금융)'
             },
-            nonFinancial: {
-                sheetId: '', // [비금융] 지원사업 시트 ID 입력
-                sheetName: 'Sheet1', // 시트 탭 이름
-                description: '비금융 지원사업'
+            reference: {
+                sheetId: '', // [참고자료] 시트 ID 입력
+                sheetName: 'Sheet1', // 경기동향, 통계, 상권 자료
+                description: '참고자료 (경기동향·통계·상권)'
             }
         };
 
@@ -391,7 +392,7 @@
         };
 
         // 지원사업 데이터를 프롬프트용 텍스트로 변환
-        const formatKnowledgeForPrompt = (financialData, nonFinancialData) => {
+        const formatKnowledgeForPrompt = (financialData, nonFinancialData, referenceData) => {
             let knowledgeText = '';
 
             if (financialData && financialData.length > 0) {
@@ -429,8 +430,17 @@
                 });
             }
 
+            if (referenceData && referenceData.length > 0) {
+                knowledgeText += '\n\n[사전지식: 참고자료 DB - 경기동향·통계·상권 분석]\n';
+                knowledgeText += '아래는 소상공인 경영 현황 진단 및 생애주기 분석 시 근거로 활용할 참고자료(경기동향, 각종 통계, 상권 자료)입니다. 진단 분석의 객관적 근거로 활용하세요:\n';
+                referenceData.forEach((row, idx) => {
+                    const values = Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(' | ');
+                    knowledgeText += `${idx + 1}. ${values}\n`;
+                });
+            }
+
             if (knowledgeText) {
-                knowledgeText += '\n[중요] 위 사전지식 DB에 있는 지원사업을 우선적으로 추천하고, 구체적인 사업명을 언급하세요. DB에 없는 일반적인 정보는 보조적으로만 활용하세요.\n';
+                knowledgeText += '\n[중요] 위 사전지식 DB에 있는 지원사업을 우선적으로 추천하고, 구체적인 사업명을 언급하세요. 참고자료 DB의 경기동향·통계 데이터는 진단 분석의 객관적 근거로 활용하세요. DB에 없는 일반적인 정보는 보조적으로만 활용하세요.\n';
             }
 
             return knowledgeText;
@@ -448,18 +458,18 @@
 
             // Google Sheets 지식 DB 상태
             const [sheetConfig, setSheetConfig] = useState({
-                financialSheetId: localStorage.getItem('financial_sheet_id') || '',
-                nonFinancialSheetId: localStorage.getItem('nonfinancial_sheet_id') || ''
+                comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '',
+                referenceSheetId: localStorage.getItem('reference_sheet_id') || ''
             });
-            const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null });
+            const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null, reference: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
             // 시트 유효성 검증 상태 (실제 로드 성공 여부)
-            const [sheetStatus, setSheetStatus] = useState({ financial: false, nonFinancial: false });
+            const [sheetStatus, setSheetStatus] = useState({ comprehensive: false, reference: false });
 
             // 시트 설정 저장
             useEffect(() => {
-                localStorage.setItem('financial_sheet_id', sheetConfig.financialSheetId);
-                localStorage.setItem('nonfinancial_sheet_id', sheetConfig.nonFinancialSheetId);
+                localStorage.setItem('comprehensive_sheet_id', sheetConfig.comprehensiveSheetId);
+                localStorage.setItem('reference_sheet_id', sheetConfig.referenceSheetId);
             }, [sheetConfig]);
 
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
@@ -527,34 +537,47 @@
                 // ========== Google Sheets 지식 DB 로드 ==========
                 let financialData = null;
                 let nonFinancialData = null;
-                let newSheetStatus = { financial: false, nonFinancial: false };
+                let referenceData = null;
+                let newSheetStatus = { comprehensive: false, reference: false };
 
-                if (sheetConfig.financialSheetId) {
-                    setAnalysisStatus('금융 지원사업 DB 로드 중 (특별보증)...');
-                    const sheet1Data = await fetchSheetData(sheetConfig.financialSheetId, 'Sheet1', apiKey);
-                    console.log('금융 지원사업 DB (Sheet1 - 특별보증):', sheet1Data);
+                if (sheetConfig.comprehensiveSheetId) {
+                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet1: 특별보증)...');
+                    const sheet1Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet1', apiKey);
+                    console.log('종합지원 DB (Sheet1 - 특별보증):', sheet1Data);
 
-                    setAnalysisStatus('금융 지원사업 DB 로드 중 (정책자금)...');
-                    const sheet2Data = await fetchSheetData(sheetConfig.financialSheetId, 'Sheet2', apiKey);
-                    console.log('금융 지원사업 DB (Sheet2 - 정책자금):', sheet2Data);
+                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet2: 정책자금)...');
+                    const sheet2Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet2', apiKey);
+                    console.log('종합지원 DB (Sheet2 - 정책자금):', sheet2Data);
 
-                    // Sheet1과 Sheet2 데이터 병합
+                    setAnalysisStatus('종합지원 DB 로드 중 (Sheet3: 비금융 지원사업)...');
+                    const sheet3Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet3', apiKey);
+                    console.log('종합지원 DB (Sheet3 - 비금융 지원사업):', sheet3Data);
+
+                    // Sheet1과 Sheet2 데이터 병합 (금융)
                     if (sheet1Data || sheet2Data) {
                         financialData = [
                             ...(sheet1Data || []).map(row => ({ ...row, _구분: '특별보증' })),
                             ...(sheet2Data || []).map(row => ({ ...row, _구분: '정책자금' }))
                         ];
-                        newSheetStatus.financial = true;
                         console.log('금융 지원사업 DB (통합):', financialData);
+                    }
+
+                    // Sheet3 데이터 (비금융)
+                    if (sheet3Data) {
+                        nonFinancialData = sheet3Data;
+                    }
+
+                    if (sheet1Data || sheet2Data || sheet3Data) {
+                        newSheetStatus.comprehensive = true;
                     }
                 }
 
-                if (sheetConfig.nonFinancialSheetId) {
-                    setAnalysisStatus('비금융 지원사업 DB 로드 중...');
-                    nonFinancialData = await fetchSheetData(sheetConfig.nonFinancialSheetId, 'Sheet1', apiKey);
-                    console.log('비금융 지원사업 DB:', nonFinancialData);
-                    if (nonFinancialData) {
-                        newSheetStatus.nonFinancial = true;
+                if (sheetConfig.referenceSheetId) {
+                    setAnalysisStatus('참고자료 DB 로드 중 (경기동향·통계·상권)...');
+                    referenceData = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet1', apiKey);
+                    console.log('참고자료 DB:', referenceData);
+                    if (referenceData) {
+                        newSheetStatus.reference = true;
                     }
                 }
 
@@ -562,7 +585,7 @@
                 setSheetStatus(newSheetStatus);
 
                 // 지식 DB를 프롬프트용 텍스트로 변환
-                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData);
+                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData, referenceData);
 
                 setAnalysisStatus('AI 서버에 연결 중...');
 
@@ -586,6 +609,10 @@ ${knowledgeText}
 3. 데이터 해석: 1~4점의 점수를 직접 언급하지 마세요. 대신 "개선 의지가 강한", "전문적 지원이 필요한", "현안 해결이 우선시되는" 등의 표현을 사용합니다. 이 숫자는 점수가 아닙니다. 합계 등 의미가 없습니다. 1에서 4로 갈수록 더 지원이 필요하다고 느낀다는 의미일 뿐입니다.
 4. 서식: 섹션 제목은 반드시 "1. 기본정보 분석", "2. 사업 생애주기 진단" 이런 식으로 숫자와 점으로만 시작하세요. ##이나 **를 사용하지 마세요.
 5. **사전지식 DB 활용**: 위에 제공된 [사전지식: 금융/비금융 지원사업 DB]가 있다면, 섹션 4번 작성 시 해당 DB의 구체적인 사업명과 내용을 최우선으로 인용하세요.
+6. **참고자료 활용 규칙**: [사전지식: 참고자료 DB]가 제공되었다면 아래 규칙을 반드시 따르세요.
+  - **해석의 도구**: 참고자료의 통계 수치를 사장님에게 강요하거나 지원의 직접적 근거로 쓰지 마세요. 참고자료는 사장님의 상황을 '해석'하는 도구입니다.
+  - **객관화 프로세스**: 사장님이 설문(Input)한 내용이 통계적(Reference)으로 어떤 의미를 갖는지 풀이해 주는 용도로만 사용하세요. (예: "사장님의 매출 감소 고민은 현재 해당 업종의 경기지수 하락과 맥을 같이 하고 있습니다.", "해당 업종의 평균 수명이 X년인 점을 감안할 때 현재는 안정기에 접어들기 위한 고비 시점입니다.")
+  - **개인화된 제언**: 통계는 배경으로만 깔고, 최종 추천은 반드시 사장님이 직접 입력한 데이터와 니즈에 기반해야 합니다. 통계 수치 자체를 나열하지 말고, 사장님의 상황에 비추어 자연스럽게 녹여내세요.
 
 [⚠️ 자격 요건 필터링 - 반드시 준수]
 1. **업력(설립일) 검증 필수**: 현재 날짜(${todayStr})와 설립일을 비교하여 정확한 업력(개월/년)을 먼저 계산하세요. 지원사업의 업력 기준(예: "창업 1년 이내", "업력 3개월 이상 3년 이하" 등)에 부합하지 않는 상품은 **절대 언급하지 마세요.**
@@ -715,10 +742,10 @@ ${knowledgeText}
                         >
                             <Icon name="database" size={14} className={showSheetConfig ? 'text-white' : 'text-amber-400'} />
                             <span className="font-bold">지식 DB</span>
-                            {(sheetStatus.financial || sheetStatus.nonFinancial) &&
+                            {(sheetStatus.comprehensive || sheetStatus.reference) &&
                                 <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>
                             }
-                            {(sheetConfig.financialSheetId || sheetConfig.nonFinancialSheetId) && !(sheetStatus.financial || sheetStatus.nonFinancial) &&
+                            {(sheetConfig.comprehensiveSheetId || sheetConfig.referenceSheetId) && !(sheetStatus.comprehensive || sheetStatus.reference) &&
                                 <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">미검증</span>
                             }
                         </button>
@@ -745,26 +772,26 @@ ${knowledgeText}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-amber-300">[금융] 지원사업 시트 ID</label>
+                                    <label className="text-xs font-bold text-amber-300">종합지원 시트 ID</label>
                                     <input
                                         type="text"
                                         placeholder="예: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
                                         className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400"
-                                        value={sheetConfig.financialSheetId}
-                                        onChange={(e) => setSheetConfig({ ...sheetConfig, financialSheetId: e.target.value })}
+                                        value={sheetConfig.comprehensiveSheetId}
+                                        onChange={(e) => setSheetConfig({ ...sheetConfig, comprehensiveSheetId: e.target.value })}
                                     />
-                                    <p className="text-[10px] text-slate-400">시트 URL에서 /d/ 와 /edit 사이의 ID를 복사하세요</p>
+                                    <p className="text-[10px] text-slate-400">Sheet1: 특별보증 | Sheet2: 정책자금 | Sheet3: 비금융 지원사업</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-emerald-300">[비금융] 지원사업 시트 ID</label>
+                                    <label className="text-xs font-bold text-emerald-300">참고자료 시트 ID</label>
                                     <input
                                         type="text"
                                         placeholder="예: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
                                         className="w-full p-2 bg-slate-700 border border-slate-600 rounded text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400"
-                                        value={sheetConfig.nonFinancialSheetId}
-                                        onChange={(e) => setSheetConfig({ ...sheetConfig, nonFinancialSheetId: e.target.value })}
+                                        value={sheetConfig.referenceSheetId}
+                                        onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetId: e.target.value })}
                                     />
-                                    <p className="text-[10px] text-slate-400">컨설팅, 교육, 멘토링 등 비금융 지원사업 목록</p>
+                                    <p className="text-[10px] text-slate-400">경기동향, 각종 통계, 상권 자료 등 진단 참고자료</p>
                                 </div>
                             </div>
                             <div className="mt-3 pt-2 border-t border-slate-600 text-xs text-slate-400">
