@@ -487,8 +487,8 @@
 
             // Google Sheets 지식 DB 상태
             const [sheetConfig, setSheetConfig] = useState({
-                comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '1XN6oRrydLRALN2INhakmC6ydlGdpWhaXE0roOAxb3ZE',
-                referenceSheetId: localStorage.getItem('reference_sheet_id') || '1XN6oRrydLRALN2INhakmC6ydlGdpWhaXE0roOAxb3ZE'
+                comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '',
+                referenceSheetId: localStorage.getItem('reference_sheet_id') || ''
             });
             const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null, reference: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
