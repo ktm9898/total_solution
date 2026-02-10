@@ -39,11 +39,11 @@
                 margin: 0;
             }
 
-            /* [NEW] 리포트 전용 페이지 설정 (매 페이지 10mm 여백 확보) */
+            /* [NEW] 리포트 전용 페이지 설정 (매 페이지 동일한 상단 여백 확보) */
             @page report-fmt {
                 size: A4;
-                margin: 10mm;
-                /* 상하좌우 10mm 여백 → 설문지와 동일한 영역 확보 */
+                margin: 20mm 10mm 10mm 10mm;
+                /* 상단 20mm, 하좌우 10mm */
             }
 
             .no-print {
@@ -121,6 +121,17 @@
                 /* [핵심] 페이지가 나뉠 때 테두리 복제 (각 페이지마다 테두리 그려짐) -> 테두리 없으므로 패딩 복제용 */
                 -webkit-box-decoration-break: clone !important;
                 box-decoration-break: clone !important;
+            }
+
+            /* [수정] 리포트 제목 상단 여백 제거 (1페이지 상단 여백을 @page 설정에만 의존하게 함) */
+            .report-view h1 {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            .report-view .border-b-4 {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
             }
 
             .p-10 {
