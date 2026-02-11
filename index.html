@@ -63,13 +63,13 @@
                 /* 줄 간격 제거 */
             }
 
-            /* 인쇄 시 섹션 제목 간격 최적화 (너무 좁지 않게 조정) */
+            /* 인쇄 시 섹션 제목 간격 최적화 (섹션 간 간격 확보, 본문과는 밀착) */
             .report-view .ai-text-header {
                 font-size: 13pt !important;
-                margin-top: 3mm !important;
-                /* 1.5mm -> 3mm */
-                margin-bottom: 1mm !important;
-                /* 0mm -> 1mm */
+                margin-top: 7mm !important;
+                /* 3mm -> 7mm (이전 섹션과 거리 늘림) */
+                margin-bottom: 0.5mm !important;
+                /* 1mm -> 0.5mm (본문과 거리 줄임) */
                 padding-bottom: 0 !important;
                 border-bottom-width: 0.5px !important;
             }
