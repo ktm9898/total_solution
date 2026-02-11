@@ -21,7 +21,31 @@
             display: none;
         }
 
-        /* 화면용 AI 텍스트 헤더 스타일 */
+        /* [NEW] 리포트 결과 화면/인쇄 공통 타이포그래피 */
+        /* 화면과 인쇄 모두에서 조금 더 크고 시원한 폰트를 적용합니다. */
+        .report-view .report-info-label {
+            font-size: 9pt !important;
+            /* 8pt -> 9pt */
+        }
+
+        .report-view .report-info-value {
+            font-size: 11.5pt !important;
+            /* 10.5pt -> 11.5pt */
+        }
+
+        .report-view .ai-text-line {
+            font-size: 12.5pt !important;
+            /* 11pt -> 12.5pt */
+            line-height: 1.75 !important;
+        }
+
+        .report-view .ai-text-header {
+            font-size: 14pt !important;
+            /* 12pt -> 14pt */
+            margin-top: 5mm !important;
+            margin-bottom: 2mm !important;
+        }
+
         .ai-text-header {
             font-size: 1.1rem;
             font-weight: 900;
@@ -319,28 +343,28 @@
             }
 
             .report-info-label {
-                font-size: 7pt !important;
+                font-size: 7.5pt !important;
                 color: #64748b !important;
                 margin-bottom: 0 !important;
                 font-weight: bold !important;
             }
 
             .report-info-value {
-                font-size: 9pt !important;
+                font-size: 10pt !important;
                 font-weight: 800 !important;
                 color: #000 !important;
             }
 
             /* AI 텍스트 (A4 2페이지 분량) */
             .ai-text-line {
-                font-size: 9.5pt !important;
-                line-height: 1.5 !important;
+                font-size: 10.5pt !important;
+                line-height: 1.6 !important;
                 margin-bottom: 0.5mm !important;
                 text-align: justify !important;
             }
 
             .ai-text-header {
-                font-size: 10.5pt !important;
+                font-size: 11.5pt !important;
                 font-weight: 900 !important;
                 margin-top: 3mm !important;
                 margin-bottom: 1.2mm !important;
@@ -545,10 +569,14 @@
                 // 빈 줄 및 --- 구분선 제거하여 세로 폭 절약
                 return text.split('\n').filter(line => {
                     const trimmed = line.trim();
-                    // 빈 줄, --- 구분선, *** 구분선 제거
-                    if (trimmed === '' || trimmed.match(/^[-*=_]{3,}$/)) return false;
+                    // --- 구분선, *** 구분선 제거 (빈 줄은 문단 나눔을 위해 유지)
+                    if (trimmed.match(/^[-*=_]{3,}$/)) return false;
                     return true;
                 }).map((line, i) => {
+                    // 빈 줄은 스페이서로 처리 (너무 넓지 않게 h-2로 축소)
+                    if (!line.trim()) {
+                        return <div key={i} className="h-2"></div>;
+                    }
                     // 헤더 인식 (숫자로 시작하는 제목 또는 ## 등)
                     if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
                         const cleanLine = line.replace(/^#+\s*/g, '').replace(/\*\*/g, '').trim();
@@ -805,11 +833,11 @@ ${knowledgeText}
 
                             <div className="mt-3 flex flex-wrap gap-2 no-print">
                                 {sheetStatus.comprehensive ?
-                                    <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">✅ 종합지원 DB 로드됨 (특별보증/정책자금/경영지원)</span>
+                                    <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded border border-emerald-200">✅ 종합지원 DB 로드됨</span>
                                     : <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-200">⚠️ 종합지원 DB 미로드</span>
                                 }
                                 {sheetStatus.reference ?
-                                    <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-200">✅ 참고자료 DB 로드됨 ({knowledgeData.reference ? knowledgeData.reference.length : 0}건)</span>
+                                    <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-200">✅ 참고자료 DB 로드됨</span>
                                     : <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded border border-red-200">⚠️ 참고자료 DB 미로드</span>
                                 }
                             </div>
