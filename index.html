@@ -22,29 +22,41 @@
         }
 
         /* [NEW] 리포트 결과 화면/인쇄 공통 타이포그래피 */
-        /* 화면과 인쇄 모두에서 조금 더 크고 시원한 폰트를 적용합니다. */
         .report-view .report-info-label {
             font-size: 8.5pt !important;
-            /* 9pt -> 8.5pt */
-        }
-
-        .report-view .report-info-value {
-            font-size: 11pt !important;
-            /* 11.5pt -> 11pt */
-        }
-
-        .report-view .ai-text-line {
-            font-size: 11.5pt !important;
-            /* 12.5pt -> 11.5pt */
-            line-height: 1.65 !important;
-            /* 1.75 -> 1.65 */
         }
 
         .report-view .ai-text-header {
             font-size: 13pt !important;
-            /* 14pt -> 13pt */
             margin-top: 5mm !important;
             margin-bottom: 2mm !important;
+        }
+
+        /* [Screen Styles] 화면용 */
+        @media screen {
+            .report-view .report-info-value {
+                font-size: 11pt !important;
+            }
+
+            .report-view .ai-text-line {
+                font-size: 12pt !important;
+                /* 화면 본문 키움 (11.5 -> 12) */
+                line-height: 1.7 !important;
+            }
+        }
+
+        /* [Print Styles] 인쇄용 (화면보다 약간 작게) */
+        @media print {
+            .report-view .report-info-value {
+                font-size: 10pt !important;
+                /* 인쇄 기본정보 줄임 (11 -> 10) */
+            }
+
+            .report-view .ai-text-line {
+                font-size: 11.5pt !important;
+                /* 인쇄 본문 유지 */
+                line-height: 1.65 !important;
+            }
         }
 
         .ai-text-header {
@@ -574,9 +586,9 @@
                     if (trimmed.match(/^[-*=_]{3,}$/)) return false;
                     return true;
                 }).map((line, i) => {
-                    // 빈 줄은 스페이서로 처리 (너무 넓지 않게 h-2로 축소)
+                    // 빈 줄은 스페이서로 처리 (h-2 -> h-1.5 로 더 축소)
                     if (!line.trim()) {
-                        return <div key={i} className="h-2"></div>;
+                        return <div key={i} className="h-1.5"></div>;
                     }
                     // 헤더 인식 (숫자로 시작하는 제목 또는 ## 등)
                     if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
