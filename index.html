@@ -43,6 +43,11 @@
                 /* 화면 본문 키움 (11.5 -> 12) */
                 line-height: 1.7 !important;
             }
+
+            .ai-text-spacer {
+                height: 4px;
+                /* 화면에서는 h-1(4px) 유지 */
+            }
         }
 
         /* [Print Styles] 인쇄용 (화면보다 약간 작게) */
@@ -56,6 +61,21 @@
                 font-size: 11.5pt !important;
                 /* 인쇄 본문 유지 */
                 line-height: 1.65 !important;
+            }
+
+            /* 인쇄 시 섹션 제목 간격 축소 */
+            .report-view .ai-text-header {
+                font-size: 13pt !important;
+                margin-top: 3mm !important;
+                /* 5mm -> 3mm */
+                margin-bottom: 1mm !important;
+                /* 2mm -> 1mm */
+            }
+
+            /* 인쇄 시 문단 간격 대폭 축소 */
+            .ai-text-spacer {
+                height: 1px !important;
+                /* 화면(4px)보다 훨씬 좁게 당김 */
             }
         }
 
@@ -586,9 +606,9 @@
                     if (trimmed.match(/^[-*=_]{3,}$/)) return false;
                     return true;
                 }).map((line, i) => {
-                    // 빈 줄은 스페이서로 처리 (h-2 -> h-1.5 로 더 축소)
+                    // 빈 줄은 스페이서로 처리 (클래스로 분리)
                     if (!line.trim()) {
-                        return <div key={i} className="h-1.5"></div>;
+                        return <div key={i} className="ai-text-spacer"></div>;
                     }
                     // 헤더 인식 (숫자로 시작하는 제목 또는 ## 등)
                     if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
