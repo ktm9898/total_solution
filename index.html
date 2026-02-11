@@ -50,32 +50,38 @@
             }
         }
 
-        /* [Print Styles] 인쇄용 (화면보다 약간 작게) */
+        /* [Print Styles] 인쇄용 (화면보다 작게, 간격 최소화) */
         @media print {
             .report-view .report-info-value {
                 font-size: 10pt !important;
-                /* 인쇄 기본정보 줄임 (11 -> 10) */
             }
 
             .report-view .ai-text-line {
                 font-size: 11.5pt !important;
-                /* 인쇄 본문 유지 */
-                line-height: 1.65 !important;
+                line-height: 1.6 !important;
+                margin-bottom: 0 !important;
+                /* 줄 간격 제거 */
             }
 
-            /* 인쇄 시 섹션 제목 간격 축소 */
+            /* 인쇄 시 섹션 제목 간격 최적화 (더 좁게) */
             .report-view .ai-text-header {
                 font-size: 13pt !important;
-                margin-top: 3mm !important;
-                /* 5mm -> 3mm */
-                margin-bottom: 1mm !important;
-                /* 2mm -> 1mm */
+                margin-top: 1.5mm !important;
+                /* 3mm -> 1.5mm */
+                margin-bottom: 0mm !important;
+                /* 1mm -> 0mm */
+                padding-bottom: 0 !important;
+                border-bottom-width: 0.5px !important;
             }
 
-            /* 인쇄 시 문단 간격 대폭 축소 */
+            /* 인쇄 시 문단 간격 최소화 */
             .ai-text-spacer {
-                height: 1px !important;
-                /* 화면(4px)보다 훨씬 좁게 당김 */
+                height: 0px !important;
+                /* 1px -> 0px */
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                border: none !important;
             }
         }
 
@@ -389,20 +395,19 @@
             }
 
             /* AI 텍스트 (A4 2페이지 분량) */
+            /* AI 텍스트 (A4 2페이지 분량) */
             .ai-text-line {
                 font-size: 10.5pt !important;
                 line-height: 1.6 !important;
-                margin-bottom: 0.5mm !important;
+                /* margin-bottom 제거 (상단 @media print 덮어쓰기 방지) */
                 text-align: justify !important;
             }
 
             .ai-text-header {
                 font-size: 11.5pt !important;
                 font-weight: 900 !important;
-                margin-top: 3mm !important;
-                margin-bottom: 1.2mm !important;
+                /* margin 제거 (상단 @media print 덮어쓰기 방지) */
                 color: #000 !important;
-                border-bottom: 0.5px dashed #bbb;
                 display: block;
             }
 
