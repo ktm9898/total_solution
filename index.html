@@ -653,6 +653,7 @@
                 let financialData = null;
                 let nonFinancialData = null;
                 let referenceData = null;
+                let economicData = null;
                 let newSheetStatus = { comprehensive: false, reference: false };
 
                 if (sheetConfig.comprehensiveSheetId) {
@@ -709,13 +710,13 @@
 
                 // 시트 상태 업데이트 (데이터가 실제로 있을 때만 true)
                 newSheetStatus.comprehensive = !!(financialData || nonFinancialData);
-                newSheetStatus.reference = !!(referenceData && referenceData.length > 0);
+                newSheetStatus.reference = !!((referenceData && referenceData.length > 0) || (economicData && economicData.length > 0));
 
-                setKnowledgeData({ financial: financialData, nonFinancial: nonFinancialData, reference: referenceData });
+                setKnowledgeData({ financial: financialData, nonFinancial: nonFinancialData, reference: referenceData, economic: economicData });
                 setSheetStatus(newSheetStatus);
 
                 // 지식 DB를 프롬프트용 텍스트로 변환
-                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData, referenceData);
+                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData, referenceData, economicData);
 
                 setAnalysisStatus('AI 서버에 연결 중...');
 
