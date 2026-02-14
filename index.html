@@ -550,6 +550,9 @@
             const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+            const [groqApiKey, setGroqApiKey] = useState(localStorage.getItem('groq_api_key') || '');
+            const [selectedModel, setSelectedModel] = useState(localStorage.getItem('selected_model') || 'gemini');
+            const [showApiConfig, setShowApiConfig] = useState(false);
             const [viewMode, setViewMode] = useState('form');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [analysisStatus, setAnalysisStatus] = useState('');
@@ -584,6 +587,8 @@
             }, [sheetStatus]);
 
             useEffect(() => { localStorage.setItem('gemini_api_key', apiKey); }, [apiKey]);
+            useEffect(() => { localStorage.setItem('groq_api_key', groqApiKey); }, [groqApiKey]);
+            useEffect(() => { localStorage.setItem('selected_model', selectedModel); }, [selectedModel]);
 
             const [formData, setFormData] = useState({
                 birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '',
@@ -644,7 +649,8 @@
             };
 
             const runRealAIAnalysis = async () => {
-                if (!apiKey) { alert('상단 Safe Connect Mode에 구글 API 키를 먼저 입력해주세요.'); return; }
+                if (selectedModel === 'gemini' && !apiKey) { alert('Safe Connect Mode에서 Google API Key를 먼저 입력해주세요.'); return; }
+                if (selectedModel === 'groq' && !groqApiKey) { alert('Safe Connect Mode에서 Groq API Key를 먼저 입력해주세요.'); return; }
 
                 setIsAnalyzing(true);
                 setAnalysisStatus('지식 DB 로드 중...');
@@ -694,17 +700,29 @@
                 }
 
                 if (sheetConfig.referenceSheetId) {
-                    setAnalysisStatus('참고자료 DB 로드 중 (경기동향·통계·상권)...');
                     try {
-                        const refSheetData = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet1', apiKey);
-                        console.log('참고자료 DB:', refSheetData);
-                        if (refSheetData) {
-                            referenceData = refSheetData.map(row => ({ ...row, _구분: '참고자료' }));
+                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet1)...');
+                        const refSheet1Data = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet1', apiKey);
+                        console.log('참고자료 DB (Sheet1):', refSheet1Data);
+                        if (refSheet1Data) {
+                            referenceData = refSheet1Data.map(row => ({ ...row, _구분: '참고자료' }));
                             newSheetStatus.reference = true;
                         }
                     } catch (e) {
-                        console.error("참고자료 로드 실패:", e);
-                        alert("참고자료 로드 실패: " + e.message);
+                        console.error("참고자료 Sheet1 로드 실패:", e);
+                        alert("참고자료 Sheet1 로드 실패: " + e.message);
+                    }
+
+                    try {
+                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet2 - 경제지표)...');
+                        const refSheet2Data = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet2', apiKey);
+                        console.log('참고자료 DB (Sheet2):', refSheet2Data);
+                        if (refSheet2Data) {
+                            economicData = refSheet2Data.map(row => ({ ...row, _구분: '경제지표' }));
+                            newSheetStatus.reference = true;
+                        }
+                    } catch (e) {
+                        console.warn("참고자료 Sheet2 로드 실패 (없을 수 있음):", e.message);
                     }
                 }
 
@@ -716,7 +734,106 @@
                 setSheetStatus(newSheetStatus);
 
                 // 지식 DB를 프롬프트용 텍스트로 변환
-                const knowledgeText = formatKnowledgeForPrompt(financialData, nonFinancialData, referenceData, economicData);
+                // 블록 구조: { name, priority, header, rows[], text }
+                // header: 섹션 제목/설명, rows: 행별 포맷 문자열, text: Gemini용 전체 텍스트
+                const knowledgeBlocks = [];
+
+                // 행 포맷 함수: 셀 내 줄바꿈→공백 치환 + Groq시 '원문' 열 제외
+                const formatRow = (row, idx, excludeKeys) => {
+                    return Object.entries(row)
+                        .filter(([k]) => {
+                            if (excludeKeys.includes(k)) return false;
+                            if (selectedModel === 'groq' && k.includes('원문')) return false;
+                            return true;
+                        })
+                        .map(([k, v]) => `${k}: ${String(v).replace(/\n/g, ' ')}`)
+                        .join(' | ');
+                };
+
+                // [우선순위 1] 특별보증
+                if (financialData && financialData.length > 0) {
+                    const guaranteeData = financialData.filter(row => row._구분 === '특별보증');
+                    if (guaranteeData.length > 0) {
+                        const header = '[사전지식: 금융 지원사업 DB]\n■ 특별보증 상품 (주요 추천 대상):\n자격이 충족되는 상품을 안내하세요.';
+                        const rows = guaranteeData.map((row, i) => `${i + 1}. ${formatRow(row, i, ['_구분'])}`);
+                        knowledgeBlocks.push({ name: '특별보증', priority: 1, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                    }
+
+                    // [우선순위 2] 정책자금
+                    const policyFundData = financialData.filter(row => row._구분 === '정책자금');
+                    if (policyFundData.length > 0) {
+                        const header = '■ 정책자금 (보증상품 연계용):\n특별보증과 연계하여 취급됩니다.';
+                        const rows = policyFundData.map((row, i) => `${i + 1}. ${formatRow(row, i, ['_구분'])}`);
+                        knowledgeBlocks.push({ name: '정책자금', priority: 2, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                    }
+                }
+
+                // [우선순위 3] 비금융 지원사업
+                if (nonFinancialData && nonFinancialData.length > 0) {
+                    const header = '[사전지식: 비금융 지원사업 DB]\n고객 니즈에 맞는 사업을 매칭하세요:';
+                    const rows = nonFinancialData.map((row, i) => `${i + 1}. ${formatRow(row, i, [])}`);
+                    knowledgeBlocks.push({ name: '비금융', priority: 3, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                }
+
+                // [우선순위 4] 참고자료 Sheet2 - 주요 경제지표
+                if (economicData && economicData.length > 0) {
+                    const header = '[사전지식: 주요 경제지표 DB]\n금리 비교 등 분석 시 활용하세요:';
+                    const rows = economicData.map((row, i) => `${i + 1}. ${formatRow(row, i, ['_구분'])}`);
+                    knowledgeBlocks.push({ name: '참고자료(Sheet2)', priority: 4, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                }
+
+                // [우선순위 5] 참고자료 Sheet1 - 우선순위 열 기준 정렬
+                if (referenceData && referenceData.length > 0) {
+                    const sortedRefData = [...referenceData].sort((a, b) => {
+                        const pa = parseInt(a['우선순위'] || a['priority'] || '9999');
+                        const pb = parseInt(b['우선순위'] || b['priority'] || '9999');
+                        return pa - pb;
+                    });
+                    const header = '[사전지식: 참고자료 DB - 경기동향·통계·상권 분석]\n사장님의 업종, 연령대, 업력, 매출 규모와 비교할 통계를 인용하세요:';
+                    const rows = sortedRefData.map((row, i) => `${i + 1}. ${formatRow(row, i, ['_구분', '우선순위', 'priority'])}`);
+                    knowledgeBlocks.push({ name: '참고자료(Sheet1)', priority: 5, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                }
+
+                // 모델에 따라 지식 DB 조합
+                let knowledgeText = '';
+                console.log('=== 지식DB 코드 v10 (최종 3,500자) ===');
+                const GROQ_KNOWLEDGE_LIMIT = 3500; // Groq 최적 한도 확정: 3500자(22KB)성공, 5000자(25KB)실패
+
+
+                if (selectedModel === 'groq' && knowledgeBlocks.length > 0) {
+                    // Groq: 우선순위 순, header + rows 배열에서 행 단위 포함
+                    const sortedBlocks = knowledgeBlocks.sort((a, b) => a.priority - b.priority);
+                    const includedInfo = [];
+                    console.log(`[Groq] 블록: ${sortedBlocks.map(b => `${b.name}(헤더${b.header.length}자,${b.rows.length}행)`).join(', ')}`);
+
+                    for (const block of sortedBlocks) {
+                        const remaining = GROQ_KNOWLEDGE_LIMIT - knowledgeText.length;
+                        if (remaining <= 100) break;
+
+                        // 헤더 추가
+                        if (knowledgeText.length + block.header.length + 1 > GROQ_KNOWLEDGE_LIMIT) break;
+                        knowledgeText += '\n' + block.header + '\n';
+                        let rowCount = 0;
+
+                        // 행 단위 추가
+                        for (const rowStr of block.rows) {
+                            if (knowledgeText.length + rowStr.length + 1 > GROQ_KNOWLEDGE_LIMIT) break;
+                            knowledgeText += rowStr + '\n';
+                            rowCount++;
+                        }
+
+                        includedInfo.push(`${block.name}(${rowCount}/${block.rows.length}행)`);
+                    }
+
+                    console.log(`[Groq 지식DB] 포함: ${includedInfo.join(', ')} (${knowledgeText.length}자/${GROQ_KNOWLEDGE_LIMIT}자)`);
+                } else if (selectedModel !== 'groq') {
+                    // Gemini: 전체 포함 (제한 없음)
+                    knowledgeBlocks.forEach(block => { knowledgeText += block.text; });
+                }
+
+                if (knowledgeText) {
+                    knowledgeText += '\n[중요] 위 사전지식 DB에 있는 지원사업을 우선적으로 추천하고, 구체적인 사업명을 언급하세요. 참고자료 DB의 경기동향·통계 데이터는 진단 분석의 객관적 근거로 활용하세요. DB에 없는 일반적인 정보는 보조적으로만 활용하세요.\n';
+                }
 
                 setAnalysisStatus('AI 서버에 연결 중...');
 
@@ -831,49 +948,107 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
 `;
 
                 try {
-                    const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-                    const listData = await listResp.json();
-                    if (listData.error) throw new Error(listData.error.message);
+                    if (selectedModel === 'groq') {
+                        // ========== Groq API (OpenAI Compatible) ==========
+                        const groqModelName = 'groq/compound';
 
-                    // 모델 목록에서 최적 모델 찾기
-                    const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
-                    const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
+                        // [안전장치] Groq 요청 크기 체크 - JSON 본문 100KB 제한
+                        let groqPrompt = promptText;
+                        const bodySize = new Blob([JSON.stringify({ model: groqModelName, messages: [{ role: 'user', content: groqPrompt }] })]).size;
+                        console.log(`[Groq] 요청 본문 크기: ${(bodySize / 1024).toFixed(1)}KB, 프롬프트 길이: ${groqPrompt.length}자, 지식DB 길이: ${knowledgeText.length}자`);
 
-                    setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 리포트 작성 중...`);
-
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-                    });
-
-                    const data = await response.json();
-                    console.log('API 응답:', data); // 디버깅용
-                    console.log('사용된 프롬프트 (지식DB 포함):', promptText); // 디버깅용
-                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                        let rawText = data.candidates[0].content.parts[0].text;
-
-                        // [후처리] AI가 지시를 어기고 첫 줄에 제목을 넣은 경우 강제로 제거
-                        const lines = rawText.split('\n');
-                        // "1." 으로 시작하지 않는 앞부분의 잡다한 제목/인사를 제거
-                        let startIndex = lines.findIndex(line => line.trim().startsWith('1.'));
-                        if (startIndex > 0) {
-                            rawText = lines.slice(startIndex).join('\n');
-                        } else if (startIndex === -1) {
-                            // 1. 을 못 찾은 경우 (예외), 그냥 원본 사용하되 첫 줄이 제목 같으면 제거 시도
-                            if (lines[0].includes('리포트') || lines[0].includes('보고서')) {
-                                rawText = lines.slice(1).join('\n');
-                            }
+                        if (bodySize > 100 * 1024) {
+                            console.warn(`[Groq] 요청이 100KB 초과 (${(bodySize / 1024).toFixed(1)}KB). 지식DB를 제외하고 재시도합니다.`);
+                            // 지식DB 부분만 제거한 프롬프트 재생성
+                            groqPrompt = groqPrompt.replace(knowledgeText, '');
+                            const newSize = new Blob([JSON.stringify({ model: groqModelName, messages: [{ role: 'user', content: groqPrompt }] })]).size;
+                            console.log(`[Groq] 지식DB 제거 후 크기: ${(newSize / 1024).toFixed(1)}KB`);
                         }
 
-                        setAiResponse(rawText);
-                        setViewMode('report');
-                        window.scrollTo(0, 0);
-                    } else if (data.error && data.error.code === 429) {
-                        throw new Error("구글 AI API 사용량이 초과되었습니다 (무료 버전 한도 초과). 약 1~2분 후 다시 시도해 주세요.");
+                        setAnalysisStatus(`Groq Compound 모델이 리포트 작성 중...`);
+
+                        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${groqApiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: groqModelName,
+                                messages: [{ role: 'user', content: groqPrompt }]
+                            })
+                        });
+
+                        const data = await response.json();
+                        console.log('Groq API 전체 응답:', JSON.stringify(data, null, 2));
+                        console.log('사용된 프롬프트 (지식DB 포함):', promptText);
+                        console.log('프롬프트 길이:', promptText.length, '자');
+
+                        if (data.choices && data.choices[0] && data.choices[0].message) {
+                            let rawText = data.choices[0].message.content;
+
+                            // [후처리] AI가 지시를 어기고 첫 줄에 제목을 넣은 경우 강제로 제거
+                            const lines = rawText.split('\n');
+                            let startIndex = lines.findIndex(line => line.trim().startsWith('1.'));
+                            if (startIndex > 0) {
+                                rawText = lines.slice(startIndex).join('\n');
+                            } else if (startIndex === -1) {
+                                if (lines[0].includes('리포트') || lines[0].includes('보고서')) {
+                                    rawText = lines.slice(1).join('\n');
+                                }
+                            }
+
+                            setAiResponse(rawText);
+                            setViewMode('report');
+                            window.scrollTo(0, 0);
+                        } else if (data.error) {
+                            console.error('Groq API 에러 상세:', JSON.stringify(data.error, null, 2));
+                            throw new Error(`[Groq] ${data.error.type || ''}: ${data.error.message}\n(code: ${data.error.code || 'N/A'})`);
+                        } else {
+                            throw new Error(`분석 결과가 비어있습니다. 상세: ${JSON.stringify(data)}`);
+                        }
                     } else {
-                        console.error('응답 오류:', data);
-                        throw new Error(`분석 결과가 비어있습니다. 상세: ${JSON.stringify(data.error || data.promptFeedback || '알 수 없음')}`);
+                        // ========== Google Gemini API (기존 로직) ==========
+                        const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                        const listData = await listResp.json();
+                        if (listData.error) throw new Error(listData.error.message);
+
+                        const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
+                        const bestModel = generativeModels.find(m => m.name.includes('gemini-1.5-flash')) || generativeModels[0];
+
+                        setAnalysisStatus(`${bestModel.name.split('/')[1]} 모델이 리포트 작성 중...`);
+
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                        });
+
+                        const data = await response.json();
+                        console.log('API 응답:', data);
+                        console.log('사용된 프롬프트 (지식DB 포함):', promptText);
+                        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                            let rawText = data.candidates[0].content.parts[0].text;
+
+                            const lines = rawText.split('\n');
+                            let startIndex = lines.findIndex(line => line.trim().startsWith('1.'));
+                            if (startIndex > 0) {
+                                rawText = lines.slice(startIndex).join('\n');
+                            } else if (startIndex === -1) {
+                                if (lines[0].includes('리포트') || lines[0].includes('보고서')) {
+                                    rawText = lines.slice(1).join('\n');
+                                }
+                            }
+
+                            setAiResponse(rawText);
+                            setViewMode('report');
+                            window.scrollTo(0, 0);
+                        } else if (data.error && data.error.code === 429) {
+                            throw new Error("구글 AI API 사용량이 초과되었습니다 (무료 버전 한도 초과). 약 1~2분 후 다시 시도해 주세요.");
+                        } else {
+                            console.error('응답 오류:', data);
+                            throw new Error(`분석 결과가 비어있습니다. 상세: ${JSON.stringify(data.error || data.promptFeedback || '알 수 없음')}`);
+                        }
                     }
                 } catch (error) {
                     const msg = error.message.includes('429') || error.message.includes('quota')
@@ -956,17 +1131,68 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             }
                         </button>
 
-                        <div className="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
-                            <Icon name="shield-check" size={14} className="text-emerald-400" />
+                        <button
+                            onClick={() => setShowApiConfig(!showApiConfig)}
+                            className={`text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg transition-all ${showApiConfig ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+                        >
+                            <Icon name="shield-check" size={14} className={showApiConfig ? 'text-white' : 'text-emerald-400'} />
                             <span className="font-bold">Safe Connect Mode</span>
-                            <div className="w-[1px] h-3 bg-slate-600 mx-1"></div>
-                            <input
-                                type="password" placeholder="Google API Key 입력"
-                                className="bg-transparent border-none outline-none text-white placeholder-slate-400 w-32 focus:w-64 transition-all"
-                                value={apiKey} onChange={(e) => setApiKey(e.target.value)}
-                            />
-                        </div>
+                            {(apiKey || groqApiKey) &&
+                                <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>
+                            }
+                        </button>
                     </div>
+
+                    {/* Safe Connect Mode 설정 패널 (토글) */}
+                    {showApiConfig && (
+                        <div className="max-w-5xl mx-auto mb-4 no-print bg-slate-800 text-white rounded-lg p-4 shadow-xl border border-slate-700">
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-600">
+                                <Icon name="shield-check" size={16} className="text-emerald-400" />
+                                <span className="font-black text-sm">API Key 및 분석 모델 설정</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-blue-300">Google API Key</label>
+                                    <input
+                                        type="password"
+                                        placeholder="Google API Key 입력"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-blue-400 focus:outline-none"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                    />
+                                    <p className="text-[10px] text-slate-400">Gemini 모델 + 지식 DB(Sheets) 사용 시 필요</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-orange-300">Groq API Key</label>
+                                    <input
+                                        type="password"
+                                        placeholder="Groq API Key 입력"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-orange-400 focus:outline-none"
+                                        value={groqApiKey}
+                                        onChange={(e) => setGroqApiKey(e.target.value)}
+                                    />
+                                    <p className="text-[10px] text-slate-400">Groq 모델 사용 시 필요 (console.groq.com)</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-emerald-300">분석 모델 선택</label>
+                                    <select
+                                        className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-xs focus:border-emerald-400 focus:outline-none"
+                                        value={selectedModel}
+                                        onChange={(e) => setSelectedModel(e.target.value)}
+                                    >
+                                        <option value="gemini">🟦 Gemini 2.5 Flash (Google)</option>
+                                        <option value="groq">🟧 Groq Compound (Groq)</option>
+                                    </select>
+                                    <p className="text-[10px] text-slate-400">
+                                        {selectedModel === 'gemini' ? '✅ Google Gemini API 사용' : '✅ Groq API 사용 (빠른 응답)'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-3 pt-2 border-t border-slate-600 text-xs text-slate-400">
+                                💡 지식 DB(Google Sheets)는 분석 모델과 무관하게 항상 Google API Key로 로드됩니다.
+                            </div>
+                        </div>
+                    )}
 
                     {/* 지식 DB 설정 패널 (토글) */}
                     {showSheetConfig && (
@@ -974,7 +1200,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-600">
                                 <Icon name="book-open" size={16} className="text-amber-400" />
                                 <span className="font-black text-sm">Google Sheets 지식 DB 설정</span>
-                                <span className="text-xs text-slate-400 ml-2">(동일한 Google API Key 사용)</span>
+                                <span className="text-xs text-slate-400 ml-2">(Google API Key 사용)</span>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">
@@ -999,15 +1225,9 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                                     />
                                     <p className="text-[10px] text-slate-400">경기동향, 각종 통계, 상권 자료 등 진단 참고자료 (Sheet1)</p>
                                 </div>
-
-                            </div>
-                            <div className="mt-3 pt-2 border-t border-slate-600 text-xs text-slate-400">
-
-                                {/* 안내 문구 제거됨 */}
                             </div>
                         </div>
-                    )
-                    }
+                    )}
 
                     <div className="max-w-5xl mx-auto bg-white shadow-2xl border border-slate-200 overflow-hidden print-container rounded-sm">
                         <div className="p-10 border-b border-slate-100 bg-white relative">
