@@ -243,6 +243,9 @@
             .w-1\.5.h-6 {
                 height: 1rem !important;
                 width: 4px !important;
+                background-color: #0055A5 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             .info-grid {
@@ -438,20 +441,20 @@
         };
 
         // ========== Google Sheets 지식 DB 설정 ==========
-        // [종합지원] 시트: Sheet1(특별보증), Sheet2(정책자금), Sheet3(비금융 지원사업)
-        // [참고자료] 시트: Sheet1(경기동향, 통계, 상권 자료 등)
+        // [종합지원] 시트: Sheet1(특별보증), Sheet2(정책자금), Sheet3(경영지원)
+        // [참고자료] 시트: Sheet1(경기동향, 통계, 상권 자료 등), Sheet2(주요 경제지표)
         // 시트는 "공개" 또는 "링크가 있는 모든 사용자가 보기 가능"으로 설정되어야 합니다.
         // 형식: https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit
         const KNOWLEDGE_SHEETS = {
             comprehensive: {
                 sheetId: '', // [종합지원] 시트 ID 입력
-                sheets: ['Sheet1', 'Sheet2', 'Sheet3'], // 특별보증, 정책자금, 비금융 지원사업
-                description: '종합지원 (금융+비금융)'
+                sheets: ['Sheet1', 'Sheet2', 'Sheet3'], // 특별보증, 정책자금, 경영지원
+                description: '종합지원'
             },
             reference: {
                 sheetId: '', // [참고자료] 시트 ID 입력
-                sheetName: 'Sheet1', // 경기동향, 통계, 상권 자료
-                description: '참고자료 (경기동향·통계·상권)'
+                sheets: ['Sheet1', 'Sheet2'], // 경기동향·통계, 주요 경제지표
+                description: '참고자료'
             }
         };
 
@@ -499,7 +502,7 @@
                 const guaranteeData = financialData.filter(row => row._구분 === '특별보증');
                 const policyFundData = financialData.filter(row => row._구분 === '정책자금');
 
-                knowledgeText += '\n\n[사전지식: 금융 지원사업 DB]\n';
+                knowledgeText += '\n\n[사전지식: 종합지원 DB - 금융]\n';
 
                 if (guaranteeData.length > 0) {
                     knowledgeText += '\n■ 특별보증 상품 (주요 추천 대상):\n';
@@ -521,8 +524,8 @@
             }
 
             if (nonFinancialData && nonFinancialData.length > 0) {
-                knowledgeText += '\n\n[사전지식: 비금융 지원사업 DB]\n';
-                knowledgeText += '아래는 현재 운영 중인 비금융 지원사업(컨설팅, 교육, 멘토링 등) 목록입니다. 고객의 니즈에 맞는 사업을 매칭할 때 이 정보를 최우선으로 참고하세요:\n';
+                knowledgeText += '\n\n[사전지식: 종합지원 DB - 경영지원]\n';
+                knowledgeText += '아래는 현재 운영 중인 경영지원 사업(컨설팅, 교육, 멘토링 등) 목록입니다. 고객의 니즈에 맞는 사업을 매칭할 때 이 정보를 최우선으로 참고하세요:\n';
                 nonFinancialData.forEach((row, idx) => {
                     const values = Object.entries(row).map(([k, v]) => `${k}: ${v}`).join(' | ');
                     knowledgeText += `${idx + 1}. ${values}\n`;
@@ -591,7 +594,7 @@
             useEffect(() => { localStorage.setItem('selected_model', selectedModel); }, [selectedModel]);
 
             const [formData, setFormData] = useState({
-                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '',
+                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '', businessNumber: '',
                 benefits: { jobIncrease: false, jobCreation: false, intellectualProperty: false, socialInsurance: false, lowIncome: false, socialCare: false, smallBusiness: false, revenueDecrease: false },
                 scores: Array(11).fill(0)
             });
@@ -672,9 +675,9 @@
                         const sheet2Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet2', apiKey);
                         console.log('종합지원 DB (Sheet2 - 정책자금):', sheet2Data);
 
-                        setAnalysisStatus('종합지원 DB 로드 중 (Sheet3: 비금융 지원사업)...');
+                        setAnalysisStatus('종합지원 DB 로드 중 (Sheet3: 경영지원)...');
                         const sheet3Data = await fetchSheetData(sheetConfig.comprehensiveSheetId, 'Sheet3', apiKey);
-                        console.log('종합지원 DB (Sheet3 - 비금융 지원사업):', sheet3Data);
+                        console.log('종합지원 DB (Sheet3 - 경영지원):', sheet3Data);
 
                         // Sheet1과 Sheet2 데이터 병합 (금융)
                         if (sheet1Data || sheet2Data) {
@@ -701,7 +704,7 @@
 
                 if (sheetConfig.referenceSheetId) {
                     try {
-                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet1)...');
+                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet1: 경기동향·통계)...');
                         const refSheet1Data = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet1', apiKey);
                         console.log('참고자료 DB (Sheet1):', refSheet1Data);
                         if (refSheet1Data) {
@@ -714,7 +717,7 @@
                     }
 
                     try {
-                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet2 - 경제지표)...');
+                        setAnalysisStatus('참고자료 DB 로드 중 (Sheet2: 경제지표)...');
                         const refSheet2Data = await fetchSheetData(sheetConfig.referenceSheetId, 'Sheet2', apiKey);
                         console.log('참고자료 DB (Sheet2):', refSheet2Data);
                         if (refSheet2Data) {
@@ -768,11 +771,11 @@
                     }
                 }
 
-                // [우선순위 3] 비금융 지원사업
+                // [우선순위 3] 경영지원 사업
                 if (nonFinancialData && nonFinancialData.length > 0) {
-                    const header = '[사전지식: 비금융 지원사업 DB]\n고객 니즈에 맞는 사업을 매칭하세요:';
+                    const header = '[사전지식: 종합지원 DB - 경영지원]\n고객 니즈에 맞는 사업을 매칭하세요:';
                     const rows = nonFinancialData.map((row, i) => `${i + 1}. ${formatRow(row, i, [])}`);
-                    knowledgeBlocks.push({ name: '비금융', priority: 3, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
+                    knowledgeBlocks.push({ name: '경영지원', priority: 3, header, rows, text: header + '\n' + rows.join('\n') + '\n' });
                 }
 
                 // [우선순위 4] 참고자료 Sheet2 - 주요 경제지표
@@ -853,11 +856,10 @@
 ${knowledgeText}
 [핵심 지침]
 1. 말투: 지나치게 친근하거나 감성적인 호소는 배제합니다. 전문 컨설턴트로서 신뢰감을 주는 정중하고 명확한 문어체(~함, ~임, ~입니다)를 사용하세요.
-2. 분석 우선순위: 섹션 3번 분석 시, 객관식 점수뿐만 아니라 '기타 애로사항(notes)'에 기재된 내용을 최우선으로 반영하여 분석하세요. 사장님의 직접적인 목소리가 가장 시급한 현안입니다.
-3. 데이터 해석: 1~4점의 점수를 직접 언급하지 마세요. 대신 "개선 의지가 강한", "전문적 지원이 필요한", "현안 해결이 우선시되는" 등의 표현을 사용합니다. 이 숫자는 점수가 아닙니다. 합계 등 의미가 없습니다. 1에서 4로 갈수록 더 지원이 필요하다고 느낀다는 의미일 뿐입니다.
-4. 서식: 응답은 반드시 "1. 기본정보 분석"으로 바로 시작하세요. "소상공인 경영 진단 리포트", "결과 보고서" 같은 문서 제목을 첫 줄에 절대 쓰지 마세요.
-   - ##이나 ** 같은 마크다운 헤더 문법도 섹션 제목에 쓰지 마세요. 그냥 "1. 기본정보 분석" 처럼 숫자와 텍스트로만 시작하세요.
-5. **사전지식 DB 활용**: 위에 제공된 [사전지식: 금융/비금융 지원사업 DB]가 있다면, 섹션 4번 작성 시 해당 DB의 구체적인 사업명과 내용을 최우선으로 인용하세요.
+2. 분석 우선순위: 섹션 3번 분석 시, 객관식 점수뿐만 아니라 '기타 애로사항(notes)'에 기재된 내용을 최우선으로 반영하여 분석하세요.
+3. 데이터 해석: 1~4점의 점수를 직접 언급하지 마세요. 대신 "개선 의지가 강한", "전문적 지원이 필요한" 등의 표현을 사용합니다. 이 숫자는 합계의 의미가 없습니다. 1에서 4로 갈수록 더 지원이 필요하다고 느낀다는 의미입니다.
+4. 서식: 응답은 반드시 "1. 기본정보 분석"으로 바로 시작하세요.
+5. **사전지식 DB 활용**: 위에 제공된 [사전지식: 종합지원 DB]가 있다면, 섹션 4번 작성 시 해당 DB의 구체적인 사업명과 내용을 최우선으로 인용하세요.
 6. **참고자료 활용 - 필수**: [사전지식: 참고자료 DB]가 제공되었다면, 해당 DB의 내용을 **최우선으로 인용**하세요.
   - 단, DB에 없는 최신 데이터나 보충 설명이 필요한 경우에는 **외부 검색이나 일반적인 통계 지식을 보조적으로 활용**해도 좋습니다.
   - 각 섹션에서 반드시 1회 이상 참고자료(DB 또는 외부지식)의 구체적 수치를 인용하여 사장님의 상황을 객관화하세요.
@@ -868,74 +870,68 @@ ${knowledgeText}
  - **[각주 표시 규칙 - 엄수]**: 
    1. 본문에서 통계 수치를 인용할 때는 반드시 문장 끝에 [1], [2]와 같이 번호만 매기세요.
    2. 리포트 제일 마지막에 한 줄 띄우고 "참고자료: [1] 자료명(00년), [2] 자료명..." 형태로 작성하세요.
-   3. **주의**: [사전지식: 참고자료 DB]가 제공되지 않았다면, 이 각주 섹션을 아예 작성하지 마세요. (빈 내용으로 두세요)
   - **주의**: "참고자료에 따르면", "DB상" 같은 메타 표현 없이, 마치 전문가가 시장 데이터를 숙지한 상태에서 자연스럽게 이야기하듯 써야 합니다.
-  - **(가상) 표기 절대 금지**: 참고자료 DB가 주어지지 않았다면, 차라리 출처를 표시하지 마세요. "2024년 소상공인 실태조사 (가상)"과 같이 **지어낸 자료명(가상, 임의 등)을 사용하는 것은 치명적인 오류**입니다. 실존하는 자료가 아니면 인용하지 마세요.
-   - **인용 규칙**: 상단에 [사전지식: 참고자료 DB]가 **있는 경우에만** [1], [2] 각주를 사용하세요. DB가 없다면 각주 없이 전문가의 통찰력으로만 작성하세요.
+  - **(가상) 표기 절대 금지**: "2024년 소상공인 실태조사 (가상)"과 같이 **지어낸 자료명(가상, 임의 등)을 사용하는 것은 치명적인 오류**입니다. 실존하는 자료가 아니면 절대 인용하지 마세요.
    - **인용 규칙**: 상단에 [사전지식: 참고자료 DB]가 **있는 경우에만** [1], [2] 각주를 사용하세요.
    - **순차 번호 준수**: 본문에서 인용할 때 [1]번부터 시작하여 [2], [3] 순서대로 번호를 매기세요. 중간 번호를 건너뛰지 마세요. (예: [1] 다음에 바로 [3] 금지)
    - **문단 나누기**: 한 섹션의 내용이 길어지면(400자 이상), 가독성을 위해 적절히 줄바꿈하여 문단을 나누세요. 빽빽한 줄글은 피하세요.
 
 [⚠️ 자격 요건 필터링 - 반드시 준수]
 1. **업력(설립일) 검증 필수**: 현재 날짜(${todayStr})와 설립일을 비교하여 정확한 업력(개월/년)을 먼저 계산하세요. 지원사업의 업력 기준(예: "창업 1년 이내", "업력 3개월 이상 3년 이하" 등)에 부합하지 않는 상품은 **절대 언급하지 마세요.**
-2. **가정법 사용 금지**: "~라면 가능합니다", "조건이 맞는다면", "교육을 이수했다면" 등 불확실한 가정형 문장을 배제하세요. 현재 입력된 데이터로 자격이 **확실히 충족되는** 상품만 매칭하세요.
-3. **부적격 상품 즉시 제외**: 업력, NICE점수, 매출액, 기보증금액 등 어느 하나라도 지원 기준에 미달하면 해당 상품은 추천 대상에서 제외하세요. "아쉽지만 자격이 안 됩니다" 같은 언급도 하지 마세요 - 그냥 언급 자체를 하지 마세요.
-4. **우선순위 매칭**: 자격이 충족되는 상품이 여러 개라면, 보증료율이 낮거나 한도가 큰 상품을 우선 추천하세요.
-5. **금리 유불리 판단 기준 (중요)**:
+2. **부적격 상품 즉시 제외**: 업력, NICE점수, 매출액, 기보증금액 등 어느 하나라도 지원 기준에 미달하면 해당 상품은 추천 대상에서 제외하세요. "아쉽지만 자격이 안 됩니다" 같은 언급도 하지 마세요 - 그냥 언급 자체를 하지 마세요.
+3. **우선순위 매칭**: 자격이 충족되는 상품이 여러 개라면, 보증료율이 낮거나, 보증비율이 높거나, 한도가 큰 상품을 우선 추천하세요.
+4. **금리 유불리 판단 기준 (중요)**:
    - 서울시 중소기업 육성자금(이차보전 상품)은 변동금리 상품으로, **실부담 금리**는 "CD금리(91일물) + 가산금리 - 이차보전금리" 공식으로 결정됩니다.
    - **가산금리 적용 기준**: 보증비율 **100%**(1.6%), **95%**(1.8%), **90%**(1.9%), **85%**(2.1%)
-   - **성장기반자금** 등 고정금리 상품: 이차보전 상품이 아니며, **상품 설명에 명시된 고정금리(예: 3.0% 등)**를 그대로 적용하여 비교하십시오. CD금리 공식을 적용하지 마십시오.
+   - **성장기반자금** 등 고정금리 상품: 이차보전 상품이 아니며, **상품 설명에 명시된 고정금리(예: 3.0% 등)**를 그대로 적용하여 비교하십시오.
    - **최종 비교**: 산출된 예상 금리가 가장 낮은 상품을 우선 추천하되, 한도 및 보증료율을 종합적으로 고려하십시오.
+5. **기보증금액과 상품 한도 비교 (필수)**: 각 상품의 '최대 지원 한도'를 지식 DB에서 확인하세요. 만약 사장님의 **기보증금액**이 해당 상품의 한도보다 크거나 같다면, 추가 지원이 불가능하므로 **절대 추천하지 마세요.** (예: 기보증 4,000만원 보유자는 한도 3,000만원인 '소액 스피드 보증' 대상이 아님)
 
 [필수 금지 사항]
 1. 리포트 제목, 인사말, 날짜, 서명 등 불필요한 서두와 결미를 생략하고 바로 본론으로 들어갑니다.
 2. 구분선(---)이나 불필요한 빈 줄을 사용하지 마세요. (공간 최적화)
-3. **글자수 절대 준수**: 전체 분량은 공백 포함 **3,000자 내외**로 작성하세요. (2,800자 ~ 3,200자 사이) 
+3. ##이나 ** 같은 마크다운 문법이 표시되지 않도록 하세요.
+4. **글자수 절대 준수**: 전체 분량은 반드시 공백 포함 **3,000자 내외**로 작성하세요. (2,800자 ~ 3,200자 사이) 
   - 각 섹션의 내용을 충분히 깊이 있게 다루어, 전문가의 통찰력이 느껴지도록 작성하세요.
-4. **메타 표현 금지**: "제공된 DB 내에서는", "사전지식 DB에 따르면", "데이터베이스 상으로는" 등 내부 데이터 참조를 암시하는 메타 표현을 사용하지 마세요. 전문가가 시장 데이터를 이미 숙지한 상태에서 자연스럽게 분석하듯이 작성하세요.
 
 [리포트 구성 및 작성 요령]
 
-1. 기본정보 분석 (500자)
-- 업종, 출생년도, 신용점수, 기보증금액, 신고매출액 등을 바탕으로 사업자의 객관적인 경영 여력을 분석합니다.오늘자 기준 CD금리를 검색해서 비교한다면 정확한 비교를 할 수 있겠지.
+1. 기본정보 분석 (**500자**)
+- 업종, 출생년도, 신용점수, 기보증금액, 신고매출액 등을 바탕으로 사업자의 객관적인 경영 여력을 분석합니다.
 - **중요**: 기보증금액은 이미 재단의 보증 한도를 사용하고 있다는 의미입니다. 신고매출액 대비 기보증금액이 높을수록 추가 보증 여력이 제한됩니다(매출액 이상은 추가 보증 불가). 이 비율을 감안하여 추가 자금 조달의 가능성을 전문가적 시각에서 평가하세요.
-- **참고자료 활용**: 해당 업종의 업체당 평균 매출액·대출액, 대표자 연령대별 매출 대비 대출 비중, 신용등급 분포 등과 사장님의 수치를 비교하여 상대적 위치를 진단하세요. [1]
+- **참고자료 활용**: 해당 업종의 업체당 평균 매출액·대출액, 대표자 연령대별 매출 대비 대출 비중, 신용등급 분포 등과 사장님의 수치를 비교하여 상대적 위치를 진단하세요.
 
-2. 사업 생애주기 진단 (500자)
+2. 사업 생애주기 진단 (**500자**)
 - 현재 날짜(${todayStr})와 설립일을 비교하여 정확한 업력(년/개월)을 먼저 계산하세요.
 - 설립일과 매출 추이를 근거로 현재 사업의 단계(창업기-성장기-성숙기-재도약기)를 정의합니다. 현재 매출 상태가 해당 생애주기에서 갖는 의미를 짚어주세요.
-- **참고자료 활용**: 업력별 부채 특성(창업 초기 vs 장기 사업자), 제2금융권 의존도, 다중채무자 비중 등과 비교하여 사장님의 현재 단계가 통계적으로 어떤 의미인지 해석하세요. [2]
+- **참고자료 활용**: 업력별 부채 특성(창업 초기 vs 장기 사업자), 제2금융권 의존도, 다중채무자 비중 등과 비교하여 사장님의 현재 단계가 통계적으로 어떤 의미인지 해석하세요.
 
-3. 중점 지원 필요분야 분석 (700자)
+3. 중점 지원 필요분야 분석 (**600자**)
 - 자가진단 고득점 항목과 '기타 애로사항'의 주관식 내용을 통합 분석합니다. 단순히 어떤 지원이 필요하다는 식으로 나열하지 마세요.
 - 사장님이 겪고 있는 경영적 한계의 본질이 무엇인지 진단하세요. (예: "주관식 의견에 기술된 임대료 부담과 매출 정체는 단순 마케팅 문제가 아닌 수익 구조의 근본적 체질 개선이 필요한 신호임")
-- **참고자료 활용**: 해당 업종의 매출 증감률, 고금리채무자 증가율, 경기동향 등과 연결하여 사장님의 어려움이 개인적 문제인지 업종 전반의 구조적 추세인지 맥락을 제공하세요. [3]
+- **참고자료 활용**: 해당 업종의 매출 증감률, 고금리채무자 증가율, 경기동향 등과 연결하여 사장님의 어려움이 개인적 문제인지 업종 전반의 구조적 추세인지 맥락을 제공하세요.
 
-4. 맞춤형 지원사업 매칭 (800자)
+4. 맞춤형 지원사업 매칭 (**1000자**)
 - **[매칭 전 필수 검증]**: 각 지원사업의 자격 요건을 사장님의 실제 데이터와 대조하세요. 자격이 100% 충족되는 사업만 추천하세요.
-- 매칭된 상품의 핵심 특징(보증료율, 상환조건 등)을 간결하면서도 구체적으로 안내하세요.
-- **금액 언급 금지**: 특별보증 및 정책자금의 구체적 한도 금액(예: 5,000만원, 1억원 등)은 개인별 심사 결과에 따라 달라지므로 절대 구체적 숫자로 언급하지 마세요. 다만 "한도 사정이 유리할 수 있음", "상대적으로 넉넉한 한도 산출 가능" 등 이점은 소개할 수 있습니다. 보증비율, 보증료율 등 확정된 조건 위주로 안내하세요.
+- 매칭된 상품의 핵심 특징(보증료율, 보증비율, 상환조건 등)을 간결하면서도 구체적으로 안내하세요.
+- **금액 및 한도 언급 금지 (중요)**: 특별보증 및 정책자금의 구체적 한도 금액(예: "최대 8억 원 이내")을 언급하는 것은 **절대 금지**합니다. 가능성 여부를 언급하지 마세요.
+- **작성 순서 (중요)**: "4. 맞춤형 지원사업 매칭" 섹션 제목 바로 다음 줄에, 그 어떤 서두(Intro)도 작성하지 말고 즉시 **[금융지원]**으로 내용을 시작하세요. 사장님의 상황 요약 같은 문장을 절대 쓰지 마세요.
 - 1. 2. 3. 번호 매기기, 구분선(---) 사용을 금지합니다. 문단 나누기와 줄바꿈을 적절히 활용하여 가독성을 높이세요.
-- **[서식]**: **특별보증 상품명**, **정책자금명**, **경영지원 사업명** 등 핵심 자금 및 지원사업 명칭은 반드시 **볼드체(**)로 굵게 표시**하여 눈에 띄게 해주세요.
+- **[서식]**: **특별보증 상품명**, **정책자금명**, **경영지원 사업명**, **[금융지원]**, **[경영지원]** 등 핵심 자금 및 지원사업 명칭과 섹션 헤더는 반드시 **볼드체**로 굵게 표시하여 눈에 띄게 해주세요.
 - [금융지원]: 지원 요건을 충족하는 특별보증 중 **가장 유리한 상품 1개**를 선정하여 상세히 설명하세요. 그 외에도 지원 가능한 상품이 있다면 **최대 2개**까지 상품명을 추가로 언급하여 선택지를 제공하세요. 연계 가능한 **정책자금명**도 함께 언급하세요.
 - [경영지원]: 3번 항목에서 도출된 문제를 해결할 수 있는 **경영지원(컨설팅, 교육 등) 사업**을 구체적으로 연결하세요. 여러 개를 추천해도 좋습니다.
 ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 사장님은 '사회보험'에 미가입 상태입니다. [경영지원] 내용을 마무리한 후, 반드시 **자영업자 고용보험** 가입을 강력히 권유하는 문단을 마지막에 덧붙이세요. "정부와 서울시가 최대 5년간 보험료를 폭넓게 지원하여 사실상 자부담 없이 폐업 위험에 대비할 수 있다"는 점을 강조해야 합니다.` : ''}
   - **주의**: "2026 중기부 소상공인 지원사업 통합공고"와 같은 포괄적인 공고명은 절대 사업명으로 추천하지 마세요. 해당 공고 내에 포함된 **개별 세부 사업명**(예: **강한 소상공인 성장지원**, **신사업창업사관학교** 등)을 구체적으로 특정하여 안내해야 합니다.
-- 형식 **절대 준수**: "[금융지원] 내용이 바로 이어집니다..." 형태로, [금융지원] 접두어 바로 뒤에 공백 하나만 두고 내용을 시작하세요. 절대 줄바꿈하지 마세요. [경영지원]도 마찬가지입니다. [금융지원] 문단과 [경영지원] 문단 사이에만 줄바꿈 1회 허용합니다.
-- **잘못된 예**: "[금융지원]\n서울형 중·저신용자..." (줄바꿈 있음 - 절대 금지)
-- **올바른 예**: "[금융지원] 서울형 중·저신용자..." (같은 줄에 이어짐)
-- **주의**: 줄바꿈을 하면 시스템에서 오류로 처리됩니다. 반드시 한 줄로 이어서 쓰세요.
-   - **주의**: 줄바꿈을 하면 시스템에서 오류로 처리됩니다. 반드시 한 줄로 이어서 쓰세요.
-   - **문단 나누기**: 한 섹션의 내용이 300자를 초과하는 경우, 가독성을 위해 2개 이상의 문단으로 나누어 작성하세요.
+- 형식 **절대 준수**: "**[금융지원]** 내용이 바로 이어집니다..." 형태로, 헤더 바로 뒤에 공백 하나만 두고 내용을 시작하세요. 절대 줄바꿈하지 마세요. **[경영지원]**도 마찬가지입니다. **[금융지원]** 문단과 **[경영지원]** 문단 사이에는 줄바꿈 해주세요.
 
-5. 종합 정리 (500자)
+5. 종합 정리 (**400자**)
 - 전체 진단을 종합하여 경영 효율화 및 리스크 관리를 위한 핵심 제언을 기술하세요. 감성적 위로보다는 전문가로서의 실천적 대안(One-Point Lesson)을 제시하며 마무리합니다.
-- **참고자료 활용**: 취약차주 동향(다중채무 증가, 제2금융권 풍선효과 등)이나 정책 제언을 근거로 사장님이 주의해야 할 리스크와 대응 전략을 제시하세요. [4]
+- **참고자료 활용**: 취약차주 동향(다중채무 증가, 제2금융권 풍선효과 등)이나 정책 제언을 근거로 사장님이 주의해야 할 리스크와 대응 전략을 제시하세요.
    - **참고 문헌 번호 순서**: 본문에서 인용된 참고자료 번호는 반드시 [1], [2], [3]...과 같이 순차적으로 매겨져야 하며, 중간에 번호가 건너뛰는 일이 없어야 합니다.
 
 [참고자료 출처 작성란]
 - 리포트 맨 마지막에 반드시 아래 형식으로 출처를 남기세요.
-- 형식: "참고자료: [1] 자료명, [2] 자료명..."
+- 형식: "참고자료: [1] 자료명, [2] 자료명..." (여러 자료를 줄바꿈 없이 한 문단으로 이어서 작성하세요)
 
 
 
@@ -1083,21 +1079,22 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
-                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">업종</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.sector || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">출생년도</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.birthYear || "-"}년</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">NICE 점수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.niceScore || "0"}점</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">기보증금액</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.guaranteedAmount || "0"}만원</span></div>
+                                <div className="report-info-item hidden md:block print:block"></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">설립일자</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.foundationDate || "-"}</span></div>
+                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">업종</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.sector || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">종업원수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.employeeCount || "0"}명</span></div>
-                                <div className="report-info-item col-span-2"><span className="text-xs text-slate-500 block report-info-label">매출현황</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.annualSales || "-"}만원({formData.revenueStatus || "-"})</span></div>
+                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">매출현황</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.annualSales || "-"}만원({formData.revenueStatus || "-"})</span></div>
                             </div>
                         </div>
 
                         {/* [수정] 줄간격 축소된 AI 본문 + [금융]/[비금융] 줄바꿈 강제 제거 후처리 */}
                         <div className="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">
                             {formatText(aiResponse
-                                .replace(/([^\n])\s*\[경영지원\]/g, '$1\n\n[경영지원]') // [경영지원] 앞에는 반드시 줄바꿈 2번
-                                .replace(/(\[(?:금융지원|경영지원)\])[:\s]*[\r\n]+\s*/g, '$1 ') // [금융지원]/[경영지원] 뒤에는 줄바꿈 제거하고 공백 1개
+                                .replace(/([^\n])\s*(\*\*\[경영지원\]\*\*|\[경영지원\])/g, '$1\n\n$2') // [경영지원] 앞에는 반드시 줄바꿈 2번
+                                .replace(/((?:\*\*|)\s*\[(?:금융지원|경영지원)\]\s*(?:\*\*|))[:\s]*[\r\n]+\s*/g, '$1 ') // [금융지원]/[경영지원] 뒤에는 줄바꿈 제거하고 공백 1개
                             )}
                         </div>
 
@@ -1212,7 +1209,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                                         value={sheetConfig.comprehensiveSheetId}
                                         onChange={(e) => setSheetConfig({ ...sheetConfig, comprehensiveSheetId: e.target.value })}
                                     />
-                                    <p className="text-[10px] text-slate-400">Sheet1: 특별보증 | Sheet2: 정책자금 | Sheet3: 비금융 지원사업</p>
+                                    <p className="text-[10px] text-slate-400">Sheet1: 특별보증 | Sheet2: 정책자금 | Sheet3: 경영지원</p>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-emerald-300">참고자료 시트 ID</label>
@@ -1223,7 +1220,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                                         value={sheetConfig.referenceSheetId}
                                         onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetId: e.target.value })}
                                     />
-                                    <p className="text-[10px] text-slate-400">경기동향, 각종 통계, 상권 자료 등 진단 참고자료 (Sheet1)</p>
+                                    <p className="text-[10px] text-slate-400">Sheet1: 경기동향·통계 / Sheet2: 주요 경제지표</p>
                                 </div>
                             </div>
                         </div>
@@ -1246,7 +1243,27 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                         <div className="p-10 space-y-12">
                             {/* [중요] 기존 통합버전18의 입력폼 코드 100% 동일하게 유지 (인쇄 레이아웃 포함) */}
                             <section>
-                                <div className="flex items-center gap-2 mb-4"><div className="w-1.5 h-6 bg-[#0055A5]"></div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">1. 기본정보(대표자, 사업체)</h2></div>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="w-1.5 h-6 bg-[#0055A5]"></div>
+                                    <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center">
+                                        1. 기본정보
+                                        <span className="text-lg text-slate-400 ml-1 font-extrabold flex items-center">
+                                            (
+                                            <input
+                                                type="text"
+                                                placeholder="업체번호"
+                                                className="w-[4.8rem] bg-transparent border-b-2 border-slate-300 focus:border-[#0055A5] outline-none text-lg font-bold text-[#0055A5] placeholder:text-slate-300 text-center mx-1 print:border-none print:p-0"
+                                                value={formData.businessNumber || ''}
+                                                maxLength={7}
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                    setFormData({ ...formData, businessNumber: val });
+                                                }}
+                                            />
+                                            )
+                                        </span>
+                                    </h2>
+                                </div>
                                 <div className="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">출생년도</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.birthYear} onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}><option value="">년도 선택</option>{years.map(y => <option key={y} value={y}>{y}년</option>)}</select></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" placeholder="점수 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.niceScore} onChange={(e) => setFormData({ ...formData, niceScore: e.target.value })} /></div>
