@@ -1077,7 +1077,10 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
 
                         {/* [수정] 칭찬해주신 '기본정보 요약 그리드' 적용 */}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-center">
+                                기본정보 요약
+                                {formData.businessNumber && <span className="ml-2 text-slate-500 font-extrabold">({formData.businessNumber})</span>}
+                            </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">출생년도</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.birthYear || "-"}년</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">NICE 점수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.niceScore || "0"}점</span></div>
