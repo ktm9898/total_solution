@@ -554,7 +554,7 @@
 
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
             const [groqApiKey, setGroqApiKey] = useState(localStorage.getItem('groq_api_key') || '');
-            const [selectedModel, setSelectedModel] = useState(localStorage.getItem('selected_model') || 'gemini');
+            const [selectedModel, setSelectedModel] = useState(localStorage.getItem('selected_model') || 'gemini-3-flash');
             const [showApiConfig, setShowApiConfig] = useState(false);
             const [viewMode, setViewMode] = useState('form');
             const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -652,7 +652,7 @@
             };
 
             const runRealAIAnalysis = async () => {
-                if (selectedModel === 'gemini' && !apiKey) { alert('Safe Connect Mode에서 Google API Key를 먼저 입력해주세요.'); return; }
+                if (selectedModel.includes('gemini') && !apiKey) { alert('Safe Connect Mode에서 Google API Key를 먼저 입력해주세요.'); return; }
                 if (selectedModel === 'groq' && !groqApiKey) { alert('Safe Connect Mode에서 Groq API Key를 먼저 입력해주세요.'); return; }
 
                 setIsAnalyzing(true);
@@ -946,6 +946,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                 try {
                     if (selectedModel === 'groq') {
                         // ========== Groq API (OpenAI Compatible) ==========
+                        // [수정] 사용자 요청에 따라 'groq/compound' 모델 고정 사용
                         const groqModelName = 'groq/compound';
 
                         // [안전장치] Groq 요청 크기 체크 - JSON 본문 100KB 제한
@@ -961,7 +962,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             console.log(`[Groq] 지식DB 제거 후 크기: ${(newSize / 1024).toFixed(1)}KB`);
                         }
 
-                        setAnalysisStatus(`Groq Compound 모델이 리포트 작성 중...`);
+                        setAnalysisStatus(`${groqModelName} 모델이 리포트 작성 중...`);
 
                         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                             method: 'POST',
@@ -1010,9 +1011,17 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                         if (listData.error) throw new Error(listData.error.message);
 
                         const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
-                        const bestModel = generativeModels.find(m => m.name.includes('gemini-2.5-flash'))
-                            || generativeModels.find(m => m.name.includes('gemini-1.5-flash'))
-                            || generativeModels[0];
+
+                        // [수정] 2.5 모델을 최우선으로 찾고, 없으면 3.0 모델을 선택 (Fallback 제거)
+                        let bestModel;
+                        if (selectedModel === 'gemini-2.5-flash') {
+                            bestModel = generativeModels.find(m => m.name.includes('gemini-2.5-flash'));
+                        } else if (selectedModel === 'gemini-3-flash' || selectedModel === 'gemini') {
+                            // gemini-3-flash (기본값)
+                            bestModel = generativeModels.find(m => m.name.includes('gemini-3-flash-preview'));
+                        }
+
+                        if (!bestModel) throw new Error(`${selectedModel} 모델을 찾을 수 없습니다. API Key 권한이나 모델 사용 가능 여부를 확인해주세요.`);
 
                         // UI 표기도 실제 이름을 그대로 사용 (강제 변환 로직 삭제)
                         let displayModelName = bestModel.name.split('/')[1];
@@ -1083,13 +1092,12 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-center">
                                 기본정보 요약
-                                {formData.businessNumber && <span className="ml-2 text-slate-500 font-extrabold">({formData.businessNumber})</span>}
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
+                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">업체번호</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.businessNumber || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">출생년도</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.birthYear || "-"}년</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">NICE 점수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.niceScore || "0"}점</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">기보증금액</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.guaranteedAmount || "0"}만원</span></div>
-                                <div className="report-info-item hidden md:block print:block"></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">설립일자</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.foundationDate || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">업종</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.sector || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">종업원수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.employeeCount || "0"}명</span></div>
@@ -1184,11 +1192,12 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                                         value={selectedModel}
                                         onChange={(e) => setSelectedModel(e.target.value)}
                                     >
-                                        <option value="gemini">🟦 Gemini 2.5 Flash (Google)</option>
+                                        <option value="gemini-3-flash">🟦 Gemini 3.0 Flash Preview (Google)</option>
+                                        <option value="gemini-2.5-flash">🟦 Gemini 2.5 Flash (Google)</option>
                                         <option value="groq">🟧 Groq Compound (Groq)</option>
                                     </select>
                                     <p className="text-[10px] text-slate-400">
-                                        {selectedModel === 'gemini' ? '✅ Google Gemini API 사용' : '✅ Groq API 사용 (빠른 응답)'}
+                                        {selectedModel.includes('gemini') ? '✅ Google Gemini API 사용' : '✅ Groq API 사용 (빠른 응답)'}
                                     </p>
                                 </div>
                             </div>
