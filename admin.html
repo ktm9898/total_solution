@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상담 관리자 페이지 - 소상공인 종합지원</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        /* ======================== */
+        /* 인쇄 전용 CSS - index.html 100% 동일 복제 */
+        /* ======================== */
+
+        /* 리포트 공통 타이포그래피 (화면+인쇄) */
+        #print-area .report-info-label {
+            font-size: 8.5pt !important;
+        }
+
+        #print-area .ai-text-header {
+            font-size: 13pt !important;
+            margin-top: 5mm !important;
+            margin-bottom: 2mm !important;
+        }
+
+        @media print {
+
+            /* 관리자 UI(#root) 숨기기 */
+            #root {
+                display: none !important;
+            }
+
+            @page {
+                size: A4;
+                margin: 0;
+            }
+
+            /* 리포트 전용 페이지 설정 */
+            @page report-fmt {
+                size: A4;
+                margin: 20mm 10mm 10mm 10mm;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+
+            .screen-only {
+                display: none !important;
+            }
+
+            /* body = index.html과 동일 */
+            body {
+                padding: 0 !important;
+                background: white !important;
+                font-size: 8.5pt !important;
+                line-height: 1.15 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                width: 210mm !important;
+                margin: 0 !important;
+            }
+
+            /* ====== 설문지 인쇄: 1페이지 고정 ====== */
+            body:has(.print-container:not(.report-view)) {
+                height: 297mm !important;
+            }
+
+            /* ====== 리포트 인쇄: 다중 페이지 허용 ====== */
+            body:has(.report-view) {
+                height: auto !important;
+                display: block !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+
+            /* #print-area가 설문지를 포함할 때: index.html의 .min-h-screen 래퍼와 동일하게 동작 */
+            /* body flex centering이 #print-area를 수직 중앙으로 밀어버리는 것을 방지 */
+            #print-area:has(.print-container:not(.report-view)) {
+                min-height: 297mm;
+            }
+
+            /* + 설문지 컨테이너 */
+            #print-area .print-container {
+                box-shadow: none !important;
+                border: 2pt solid #000 !important;
+                width: 190mm !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+                background: white !important;
+                display: flex;
+                flex-direction: column;
+                transform: translateY(10mm) !important;
+                box-sizing: border-box !important;
+            }
+
+            /* + 리포트 컨테이너 */
+            #print-area .report-view.print-container {
+                page: report-fmt !important;
+                transform: none !important;
+                border: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0mm 5mm !important;
+                box-sizing: border-box !important;
+                min-height: auto !important;
+                -webkit-box-decoration-break: clone !important;
+                box-decoration-break: clone !important;
+            }
+
+            #print-area .report-view h1 {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            #print-area .report-view .border-b-4 {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }
+
+            /* + 공통 인쇄 사이징 */
+            #print-area .p-10 {
+                padding: 0.5rem 1rem !important;
+            }
+
+            #print-area h1 {
+                font-size: 16pt !important;
+                margin-bottom: 0.05rem !important;
+            }
+
+            #print-area .text-sm {
+                font-size: 7.5pt !important;
+            }
+
+            #print-area .text-xl {
+                font-size: 10.5pt !important;
+            }
+
+            #print-area .p-10.space-y-12 {
+                padding: 0.6rem 1.2rem !important;
+            }
+
+            #print-area .space-y-12>*+* {
+                margin-top: 1.1rem !important;
+            }
+
+            #print-area h2 {
+                font-size: 10.5pt !important;
+                margin-bottom: 0 !important;
+            }
+
+            #print-area .mb-6,
+            #print-area .mb-4 {
+                margin-bottom: 0.3rem !important;
+            }
+
+            #print-area .w-1\.5.h-6 {
+                height: 1rem !important;
+                width: 4px !important;
+                background-color: #0055A5 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* + 기본정보 그리드 */
+            #print-area .info-grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 0.6rem !important;
+            }
+
+            #print-area .info-grid label {
+                font-size: 8pt !important;
+            }
+
+            #print-area .info-grid select,
+            #print-area .info-grid input {
+                padding: 0.2rem 0.4rem !important;
+                font-size: 8.5pt !important;
+                height: 26px !important;
+                border: 0.5pt solid #ccc !important;
+            }
+
+            /* + 매출현황 */
+            #print-area .revenue-box {
+                margin-top: 0.5rem !important;
+                padding: 0.4rem 0.8rem !important;
+                gap: 0.6rem !important;
+                flex-wrap: nowrap !important;
+                justify-content: space-between !important;
+            }
+
+            #print-area .revenue-box span {
+                font-size: 7.5pt !important;
+            }
+
+            #print-area .revenue-box input {
+                width: 70px !important;
+                padding: 0.2rem 0.3rem !important;
+                font-size: 7.5pt !important;
+            }
+
+            #print-area .revenue-box label {
+                gap: 0.2rem !important;
+            }
+
+            #print-area .revenue-box input[type="radio"] {
+                width: 12px !important;
+                height: 12px !important;
+            }
+
+            /* + 범례 박스 */
+            #print-area .legend-box {
+                padding: 0.2rem 0.5rem !important;
+                margin-bottom: 0.25rem !important;
+                border: 0.5pt solid #e2e8f0 !important;
+                line-height: 0.85 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 0.05rem !important;
+            }
+
+            #print-area .legend-box span {
+                font-size: 8pt !important;
+            }
+
+            #print-area .legend-box div.w-full {
+                margin-bottom: 0 !important;
+            }
+
+            /* + 테이블 */
+            #print-area table th,
+            #print-area table td {
+                padding: 0.4rem 0.4rem !important;
+                font-size: 9pt !important;
+                border: 0.5pt solid #eee !important;
+            }
+
+            #print-area .text-center-print {
+                text-align: center !important;
+            }
+
+            #print-area .w-9.h-9 {
+                width: 1.2rem !important;
+                height: 1.2rem !important;
+                font-size: 8pt !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* + 하단 그리드 (우대사항 + 애로사항) */
+            #print-area .bottom-grid {
+                display: grid !important;
+                grid-template-columns: 1.1fr 0.9fr !important;
+                gap: 1.2rem !important;
+                align-items: stretch !important;
+            }
+
+            #print-area .benefit-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 0.35rem !important;
+                width: 100% !important;
+            }
+
+            #print-area .benefit-grid label {
+                padding: 0.3rem 0.5rem !important;
+                border: 0.5pt solid #eee !important;
+                font-size: 8pt !important;
+                height: 32px !important;
+                display: flex !important;
+                align-items: center;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+            }
+
+            #print-area .notes-area {
+                min-height: 132px !important;
+                height: 100% !important;
+                font-size: 9pt !important;
+                padding: 0.5rem !important;
+                border: 0.5pt solid #ccc !important;
+                box-sizing: border-box !important;
+            }
+
+            /* + 리포트 전용 */
+            #print-area .report-view {
+                display: block !important;
+                box-shadow: none !important;
+            }
+
+            #print-area .report-info-container {
+                border: 1pt solid #ccc !important;
+                background-color: #f8fafc !important;
+                padding: 3mm !important;
+                margin-bottom: 4mm !important;
+                border-radius: 4px !important;
+            }
+
+            #print-area .report-info-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 2mm !important;
+                row-gap: 2mm !important;
+            }
+
+            #print-area .report-info-item {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            #print-area .report-info-label {
+                font-size: 7.5pt !important;
+                color: #64748b !important;
+                margin-bottom: 0 !important;
+                font-weight: bold !important;
+            }
+
+            #print-area .report-info-value {
+                font-size: 10pt !important;
+                font-weight: 800 !important;
+                color: #000 !important;
+            }
+
+            /* + AI 텍스트 */
+            #print-area .ai-text-line {
+                font-size: 10.5pt !important;
+                line-height: 1.6 !important;
+                text-align: justify !important;
+            }
+
+            #print-area .ai-text-header {
+                font-size: 11.5pt !important;
+                font-weight: 900 !important;
+                color: #000 !important;
+                display: block;
+            }
+
+            #print-area .ai-text-bold {
+                font-weight: 800 !important;
+            }
+
+            #print-area .ai-text-spacer {
+                height: 0px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                border: none !important;
+            }
+
+            /* 리포트 ai-text 인쇄 전용 오버라이드 */
+            #print-area .report-view .ai-text-line {
+                font-size: 11.5pt !important;
+                line-height: 1.6 !important;
+                margin-bottom: 0 !important;
+            }
+
+            #print-area .report-view .ai-text-header {
+                font-size: 13pt !important;
+                margin-top: 7mm !important;
+                margin-bottom: 0.5mm !important;
+                padding-bottom: 0 !important;
+                border-bottom-width: 0.5px !important;
+            }
+
+            #print-area .report-view .report-info-value {
+                font-size: 10pt !important;
+            }
+        }
+
+        .ai-text-header {
+            font-size: 1.1rem;
+            font-weight: 900;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 0.25rem;
+        }
+
+        /* 테이블 행 애니메이션 */
+        @keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .table-row-animate {
+            animation: fadeInRow 0.3s ease forwards;
+        }
+
+        /* 토스트 */
+        @keyframes slideInToast {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-animate {
+            animation: slideInToast 0.4s ease forwards;
+        }
+
+        /* 스크롤바 */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen">
+    <div id="root"></div>
+    <div id="print-area"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        const Icon = ({ name, size = 18, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
+
+        // ── 토스트 컴포넌트 ──
+        const Toast = ({ message, type = 'success', onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            const colors = {
+                success: 'bg-emerald-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
+
+            return (
+                <div className={`fixed top-6 right-6 z-[9999] ${colors[type]} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm toast-animate flex items-center gap-2`}>
+                    <Icon name={type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'} size={18} />
+                    {message}
+                </div>
+            );
+        };
+
+        // ── 리포트 텍스트 포매터 (index.html과 동일) ──
+        const formatText = (text) => {
+            if (!text) return "";
+            return text.split('\n').filter(line => {
+                const trimmed = line.trim();
+                if (trimmed.match(/^[-*=_]{3,}$/)) return false;
+                return true;
+            }).map((line, i) => {
+                if (!line.trim()) {
+                    return <div key={i} className="ai-text-spacer" style={{ height: '0.5rem' }}></div>;
+                }
+                if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
+                    const cleanLine = line.replace(/^#+\s*/g, '').replace(/\*\*/g, '').trim();
+                    return <div key={i} className="ai-text-header">{cleanLine}</div>;
+                }
+                const parts = line.split(/(\*\*.*?\*\*)/g);
+                return (
+                    <div key={i} className="ai-text-line text-sm leading-relaxed text-slate-700">
+                        {parts.map((part, j) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                                return <strong key={j} className="font-black">{part.slice(2, -2)}</strong>;
+                            }
+                            return <span key={j}>{part}</span>;
+                        })}
+                    </div>
+                );
+            });
+        };
+
+        // ── 설문지 뷰어 컴포넌트 ──
+        const SurveyViewer = ({ record }) => {
+            let surveyObj = {};
+            try { surveyObj = JSON.parse(record.surveyData || '{}'); } catch { }
+
+            const questions = ["우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다."];
+            const categories = [{ name: "홍보·마케팅", startIdx: 0, count: 4 }, { name: "매장 운영·관리", startIdx: 4, count: 4 }, { name: "법률·노무·세무", startIdx: 8, count: 3 }];
+            const benefitLabels = {
+                jobIncrease: '상시근로자 고용 증가', jobCreation: '일자리 창출', intellectualProperty: '지식재산권 보유',
+                socialInsurance: '사회보험 가입', lowIncome: '저소득', socialCare: '사회적배려',
+                smallBusiness: '영세자영업(간이과세자)', revenueDecrease: '매출감소'
+            };
+
+            const scores = surveyObj.scores || Array(11).fill(0);
+            const benefits = surveyObj.benefits || {};
+            const notes = surveyObj.notes || '';
+
+            return (
+                <div className="space-y-6">
+                    {/* 기본정보 요약 */}
+                    <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div><span className="text-xs text-slate-500 block">업체번호</span><span className="text-sm font-black text-slate-800">{record.businessNumber || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{record.birthYear || '-'}년</span></div>
+                            <div><span className="text-xs text-slate-500 block">NICE CB점수</span><span className="text-sm font-black text-slate-800">{record.niceScore || '0'}점</span></div>
+                            <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '0'}만원</span></div>
+                            <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{record.foundationDate || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{record.sector || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{record.employeeCount || '0'}명</span></div>
+                            <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{record.annualSales || '-'}만원 ({record.revenueStatus || '-'})</span></div>
+                        </div>
+                    </div>
+
+                    {/* 자가진단 점수 */}
+                    <div>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">사업운영 주요 현황 (자가진단)</h3>
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 text-xs font-black text-slate-500 border-b border-slate-200">
+                                    <th className="p-2 text-center w-24">구분</th>
+                                    <th className="p-2 text-left">진단문항</th>
+                                    <th className="p-2 text-center w-16">점수</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {categories.map(cat =>
+                                    questions.slice(cat.startIdx, cat.startIdx + cat.count).map((q, qIdx) => (
+                                        <tr key={cat.startIdx + qIdx} className="border-b border-slate-100">
+                                            {qIdx === 0 && <td rowSpan={cat.count} className="p-2 text-center font-bold text-xs text-[#0055A5] bg-slate-50/50 border-r border-slate-100">{cat.name}</td>}
+                                            <td className="p-2 text-slate-700">{q}</td>
+                                            <td className="p-2 text-center">
+                                                <span className={`inline-flex w-7 h-7 items-center justify-center rounded text-xs font-black ${scores[cat.startIdx + qIdx] > 0 ? 'bg-[#0055A5] text-white' : 'bg-slate-100 text-slate-300'}`}>
+                                                    {scores[cat.startIdx + qIdx] || '-'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* 우대사항 */}
+                    <div>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">우대사항</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(benefitLabels).map(([key, label]) => (
+                                <span key={key} className={`text-xs px-3 py-1.5 rounded-full font-bold ${benefits[key] ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                                    {benefits[key] ? '✓ ' : ''}{label}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 기타 애로사항 */}
+                    {notes && (
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기타 애로사항</h3>
+                            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 text-sm text-slate-700 whitespace-pre-wrap">{notes}</div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ── 모달 컴포넌트 ──
+        const Modal = ({ isOpen, onClose, title, children, onPrint, printType }) => {
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                            <h2 className="text-lg font-black text-slate-800">{title}</h2>
+                            <div className="flex items-center gap-3">
+                                {onPrint && (
+                                    <button onClick={onPrint} className="flex items-center gap-2 px-4 py-2 bg-[#0055A5] text-white rounded-lg font-bold text-sm hover:bg-[#004488] transition-colors">
+                                        <Icon name="printer" size={16} /> 인쇄
+                                    </button>
+                                )}
+                                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                    <Icon name="x" size={20} className="text-slate-400" />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="overflow-y-auto p-6 custom-scroll flex-1">
+                            {children}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminApp = () => {
+            // ★ Apps Script 설정 (배포 후 URL을 아래에 붙여넣으세요)
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxm7dsVag6QDW9tkI5YautBl90p0ffPmcmZ96YElNN8qUmn025qOR7zBKOcyiOZC7Cz5A/exec';  // ← Apps Script 웹앱 URL 여기에 붙여넣기
+            const APPS_SCRIPT_KEY = 'Vk9xTm2rWs7pLd4Q';
+
+            const [records, setRecords] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [toast, setToast] = useState(null);
+
+            // 필터
+            const [dateFrom, setDateFrom] = useState('');
+            const [dateTo, setDateTo] = useState('');
+            const [searchBiz, setSearchBiz] = useState('');
+            const [searchSector, setSearchSector] = useState('');
+
+            // 모달
+            const [surveyModal, setSurveyModal] = useState(null);
+            const [reportModal, setReportModal] = useState(null);
+
+
+
+            // 데이터 로드
+            const loadData = useCallback(async () => {
+                if (!APPS_SCRIPT_URL) {
+                    setToast({ message: 'APPS_SCRIPT_URL이 설정되지 않았습니다. 코드 내 URL을 확인하세요.', type: 'error' });
+                    return;
+                }
+                setLoading(true);
+                try {
+                    const resp = await fetch(`${APPS_SCRIPT_URL}?key=${encodeURIComponent(APPS_SCRIPT_KEY)}`);
+                    const data = await resp.json();
+                    if (data.success) {
+                        setRecords(data.data || []);
+                        setToast({ message: `${data.total || 0}건의 상담 데이터를 불러왔습니다.`, type: 'success' });
+                    } else {
+                        throw new Error(data.error || '알 수 없는 오류');
+                    }
+                } catch (err) {
+                    setToast({ message: '데이터 로드 실패: ' + err.message, type: 'error' });
+                }
+                setLoading(false);
+            }, []);
+
+            // 필터링
+            const filteredRecords = useMemo(() => {
+                return records.filter(r => {
+                    if (dateFrom && r.consultDate < dateFrom) return false;
+                    if (dateTo && r.consultDate > dateTo) return false;
+                    if (searchBiz && !r.businessNumber.includes(searchBiz)) return false;
+                    if (searchSector && !r.sector.includes(searchSector)) return false;
+                    return true;
+                });
+            }, [records, dateFrom, dateTo, searchBiz, searchSector]);
+
+            // 통계
+            const stats = useMemo(() => {
+                const today = new Date().toISOString().split('T')[0];
+                const todayCount = records.filter(r => r.consultDate === today).length;
+                const sectorMap = {};
+                records.forEach(r => { if (r.sector) sectorMap[r.sector] = (sectorMap[r.sector] || 0) + 1; });
+                const topSector = Object.entries(sectorMap).sort((a, b) => b[1] - a[1])[0];
+                return { total: records.length, today: todayCount, topSector: topSector ? `${topSector[0]} (${topSector[1]}건)` : '-' };
+            }, [records]);
+
+            // CSV 다운로드
+            const downloadCSV = () => {
+                const headers = ['상담일자', '업체번호', '출생년도', 'NICE CB점수', '기보증금액', '설립일자', '업종', '종업원수', '매출액', '매출추이'];
+                const csvRows = [headers.join(',')];
+                filteredRecords.forEach(r => {
+                    csvRows.push([
+                        r.consultDate, r.businessNumber, r.birthYear, r.niceScore,
+                        r.guaranteedAmount, r.foundationDate, r.sector, r.employeeCount,
+                        r.annualSales, r.revenueStatus
+                    ].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','));
+                });
+                const bom = '\uFEFF';
+                const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `상담데이터_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            // 리포트 인쇄 (index.html ReportView 구조 100% 동일)
+            const printReport = (record) => {
+                const printArea = document.getElementById('print-area');
+                const reportText = (record.reportData || '')
+                    .replace(/([^\n])\s*(\*\*\[경영지원\]\*\*|\[경영지원\])/g, '$1\n\n$2')
+                    .replace(/((?:\*\*|)\s*\[(?:금융지원|경영지원)\]\s*(?:\*\*|))[:\s]*[\r\n]+\s*/g, '$1 ');
+
+                const formattedLines = reportText.split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    if (trimmed.match(/^[-*=_]{3,}$/)) return false;
+                    return true;
+                }).map(line => {
+                    if (!line.trim()) return '<div class="ai-text-spacer"></div>';
+                    if (line.match(/^(##|#|\*\*?\s*[1-5]\.|[1-5]\.)/)) {
+                        const clean = line.replace(/^#+\s*/g, '').replace(/\*\*/g, '').trim();
+                        return `<div class="ai-text-header">${clean}</div>`;
+                    }
+                    const escaped = line.replace(/\*\*(.*?)\*\*/g, '<strong class="ai-text-bold">$1</strong>');
+                    return `<div class="ai-text-line">${escaped}</div>`;
+                }).join('');
+
+                printArea.className = '';
+                printArea.innerHTML = `
+                        <div class="bg-white p-12 print:p-0 shadow-xl border border-slate-200 rounded-sm print-container report-view">
+                        <div class="border-b-4 border-slate-900 pb-4 mb-6">
+                            <h1 class="text-3xl font-black text-slate-900 tracking-tight">소상공인 종합지원 AI 진단 리포트</h1>
+                            <p class="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
+                        </div>
+                        <div class="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-center">기본정보 요약</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업체번호</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessNumber || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">출생년도</span><span class="text-sm font-black text-slate-800 report-info-value">${record.birthYear || '-'}년</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">NICE 점수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.niceScore || '0'}점</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '0'}만원</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">설립일자</span><span class="text-sm font-black text-slate-800 report-info-value">${record.foundationDate || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업종</span><span class="text-sm font-black text-slate-800 report-info-value">${record.sector || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">종업원수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.employeeCount || '0'}명</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">매출현황</span><span class="text-sm font-black text-slate-800 report-info-value">${record.annualSales || '-'}만원(${record.revenueStatus || '-'})</span></div>
+                            </div>
+                        </div>
+                        <div class="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">${formattedLines}</div>
+                    </div>
+                `;
+
+                setTimeout(() => window.print(), 300);
+                setTimeout(() => { printArea.innerHTML = ''; printArea.className = ''; }, 1000);
+            };
+
+            // 설문지 인쇄 (index.html 폼 구조 100% 동일)
+            const printSurvey = (record) => {
+                const printArea = document.getElementById('print-area');
+                let surveyObj = {};
+                try { surveyObj = JSON.parse(record.surveyData || '{}'); } catch { }
+
+                const questions = ["우리 동네 상권분석 데이터와 현재 트렌드가 궁금하다.", "쿠폰 발행, 이벤트 기획 등 구체적인 판촉 방법을 알고 싶다.", "인스타그램, 블로그 등 SNS 홍보를 잘하고 싶다.", "배달 앱이나 포털의 리뷰 및 평점 관리 방법을 배우고 싶다.", "고객 트렌드에 맞는 신메뉴나 신상품 개발을 도움받고 싶다.", "분위기 쇄신을 위한 매장 연출(VMD) 개선이 필요하다.", "우리 가게의 로고, 메뉴판 등 디자인을 개선하고 싶다.", "키오스크, 서빙로봇 등 디지털 기술 도입을 희망한다.", "임대료 인상이나 재계약 관련 법률 검토가 필요하다.", "직원 근로계약서, 주휴수당 등 노무 규정 도움이 필요하다.", "부가세, 소득세 신고 시 활용 가능한 절세 팁을 배우고 싶다."];
+                const scores = surveyObj.scores || Array(11).fill(0);
+                const benefits = surveyObj.benefits || {};
+                const notes = surveyObj.notes || '';
+
+                const benefitLabels = [
+                    { key: 'jobIncrease', label: '상시근로자 고용 증가' }, { key: 'jobCreation', label: '일자리 창출' },
+                    { key: 'intellectualProperty', label: '지식재산권 보유' }, { key: 'socialInsurance', label: '사회보험 가입' },
+                    { key: 'lowIncome', label: '저소득' }, { key: 'socialCare', label: '사회적배려' },
+                    { key: 'smallBusiness', label: '영세자영업' }, { key: 'revenueDecrease', label: '매출감소' }
+                ];
+
+                const categories = [
+                    { name: '홍보·마케팅', startIdx: 0, count: 4 },
+                    { name: '매장 운영·관리', startIdx: 4, count: 4 },
+                    { name: '법률·노무·세무', startIdx: 8, count: 3 }
+                ];
+
+                // 테이블 행 생성
+                let tableRows = '';
+                categories.forEach(cat => {
+                    for (let qIdx = 0; qIdx < cat.count; qIdx++) {
+                        const globalIdx = cat.startIdx + qIdx;
+                        const q = questions[globalIdx];
+                        let catCell = '';
+                        if (qIdx === 0) {
+                            catCell = `<td rowspan="${cat.count}" class="p-4 align-middle text-sm text-center text-center-print" style="font-weight:900;color:#0055A5;border-right:0.5pt solid #eee;background:#fafafb20;vertical-align:middle;white-space:pre-wrap;">${cat.name}</td>`;
+                        }
+                        const scoreCells = [1, 2, 3, 4].map(s => {
+                            const isSelected = scores[globalIdx] === s;
+                            return `<td class="p-4 text-center">
+                                <div class="w-9 h-9" style="border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;
+                                    ${isSelected ? 'background:#0055A5;color:white;border:1px solid #0055A5;' : 'background:white;border:0.5pt solid #e2e8f0;color:#cbd5e1;'}
+                                    -webkit-print-color-adjust:exact;print-color-adjust:exact;">${s}</div>
+                            </td>`;
+                        }).join('');
+                        tableRows += `<tr class="border-b border-slate-100">${catCell}<td class="p-4 text-base text-slate-700 font-medium leading-snug text-center-print">${q}</td>${scoreCells}</tr>`;
+                    }
+                });
+
+                // 우대사항 그리드 (체크박스)
+                const benefitGrid = benefitLabels.map(item => {
+                    const checked = benefits[item.key];
+                    return `<label class="flex items-start gap-3 px-4 py-2.5 rounded-sm border cursor-pointer ${checked ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                        <input type="checkbox" ${checked ? 'checked' : ''} disabled class="mt-0.5 w-5 h-5 accent-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;" />
+                        <span class="text-sm font-bold leading-tight ${checked ? 'text-[#0055A5]' : 'text-slate-600'}">${item.label}</span>
+                    </label>`;
+                }).join('');
+
+                printArea.className = '';
+                printArea.innerHTML = `
+                    <div class="print-container">
+                        <div class="p-10 border-b border-slate-100 bg-white relative">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-xs font-bold text-slate-400 tracking-tighter uppercase italic">Seoul Credit Guarantee Foundation</span>
+                                    </div>
+                                    <h1 class="text-4xl font-black text-slate-900 tracking-tight leading-none mb-2">소상공인 종합지원을 위한 자가진단</h1>
+                                    <p class="text-sm text-slate-500 font-medium">우리 가게 맞춤형 지원사업 매칭을 위한 기초 리포트</p>
+                                </div>
+                                <div class="text-right"><p class="text-xl font-black text-[#0055A5] leading-tight mb-1">내일을 꿈꾸는 사장님께</p><p class="text-sm font-bold text-slate-400">서울신용보증재단 용산종합지원센터</p></div>
+                            </div>
+                        </div>
+
+                        <!-- 본문: p-10 space-y-12 -->
+                        <div class="p-10 space-y-12">
+                            <!-- 1. 기본정보 -->
+                            <section>
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
+                                    <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center">
+                                        1. 기본정보
+                                        <span class="text-lg text-slate-400 ml-1 font-extrabold">(${record.businessNumber || ''})</span>
+                                    </h2>
+                                </div>
+                                <div class="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" value="${record.niceScore || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" value="${record.guaranteedAmount || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" value="${record.foundationDate || '-'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" value="${record.sector || '-'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" value="${record.employeeCount || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                </div>
+                                <div class="revenue-box mt-8 flex flex-wrap items-center gap-10 p-5 bg-slate-50 rounded-sm border border-slate-100">
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-sm font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" value="${record.annualSales || ''}" readonly class="w-40 p-2.5 bg-white border border-slate-200 rounded-sm text-base font-bold text-right" />
+                                            <span class="text-xs font-bold text-slate-500">만원/년</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-5">
+                                        ${["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map(opt => {
+                    const isChecked = record.revenueStatus === opt;
+                    return `<label class="flex items-center gap-2 cursor-pointer">
+                                                <input type="radio" name="revenue-print" ${isChecked ? 'checked' : ''} disabled class="w-4 h-4 accent-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;" />
+                                                <span class="text-sm font-bold ${isChecked ? 'text-[#0055A5]' : 'text-slate-500'}">${opt}</span>
+                                            </label>`;
+                }).join('')}
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- 2. 사업운영 주요 현황 -->
+                            <section>
+                                <div class="flex items-center gap-2 mb-4"><div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div><h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">2. 사업운영 주요 현황</h2></div>
+                                <div class="legend-box mb-5 flex flex-wrap gap-5 bg-blue-50/50 p-4 border border-blue-100/50 rounded-sm shadow-sm">
+                                    <div class="w-full no-print-bg"><span class="text-xs font-black text-[#0055A5] uppercase tracking-widest underline decoration-blue-200 underline-offset-4">진단 지표 척도 안내 (1~4점)</span></div>
+                                    <div class="flex gap-6">
+                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">1:</b> 전혀 그렇지 않다</span>
+                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">2:</b> 그렇지 않다</span>
+                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">3:</b> 그렇다</span>
+                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">4:</b> 매우 그렇다</span>
+                                    </div>
+                                </div>
+                                </div>
+                                <div class="overflow-x-auto border-t-2 border-slate-800">
+                                    <table class="w-full border-collapse">
+                                        <thead><tr class="bg-slate-50 text-xs font-black text-slate-500 border-b border-slate-200"><th class="p-4 text-center w-28 text-center-print">구분</th><th class="p-4 text-center text-center-print">진단문항</th><th class="p-4 text-center w-16">1</th><th class="p-4 text-center w-16">2</th><th class="p-4 text-center w-16">3</th><th class="p-4 text-center w-16">4</th></tr></thead>
+                                        <tbody>${tableRows}</tbody>
+                                    </table>
+                                </div>
+                            </section>
+
+                            <!-- 하단 2열: 우대사항 + 애로사항 -->
+                            <div class="bottom-grid grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch">
+                                <section class="flex flex-col">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
+                                        <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">3. 우대사항 체크</h2>
+                                    </div>
+                                    <div class="benefit-grid space-y-1.5">${benefitGrid}</div>
+                                </section>
+                                <section class="flex flex-col">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
+                                        <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">※ 기타 애로사항</h2>
+                                    </div>
+                                    <textarea class="notes-area w-full flex-grow p-5 border border-slate-200 rounded-sm text-base bg-slate-50/50 font-medium leading-relaxed" readonly style="color:${notes ? '#1e293b' : '#cbd5e1'};resize:none;">${notes || '구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요.'}</textarea>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => window.print(), 300);
+                setTimeout(() => { printArea.innerHTML = ''; printArea.className = ''; }, 1000);
+            };
+
+            return (
+                <div className="min-h-screen pb-12">
+                    {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
+                    {/* ── 헤더 ── */}
+                    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+                        <div className="max-w-7xl mx-auto px-6 py-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                        <div className="w-10 h-10 bg-[#0055A5] rounded-lg flex items-center justify-center shadow-lg">
+                                            <Icon name="layout-dashboard" size={22} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-2xl font-black tracking-tight">상담 관리자</h1>
+                                            <p className="text-xs text-slate-400 font-bold">소상공인 종합지원 AI 진단 데이터 관리</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <a href="index.html"
+                                        className="text-xs px-4 py-2 bg-[#0055A5] text-white rounded-lg font-bold hover:bg-[#004488] transition-colors flex items-center gap-2">
+                                        <Icon name="file-text" size={14} /> 상담 페이지
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-6 mt-6 space-y-6">
+                        {/* ── 통계 카드 ── */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <Icon name="users" size={22} className="text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase">총 상담</p>
+                                        <p className="text-2xl font-black text-slate-800">{stats.total}<span className="text-sm font-bold text-slate-400 ml-1">건</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                        <Icon name="calendar-check" size={22} className="text-emerald-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase">오늘 상담</p>
+                                        <p className="text-2xl font-black text-slate-800">{stats.today}<span className="text-sm font-bold text-slate-400 ml-1">건</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <Icon name="trending-up" size={22} className="text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase">최다 업종</p>
+                                        <p className="text-lg font-black text-slate-800">{stats.topSector}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── 필터 바 ── */}
+                        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                            <div className="flex flex-wrap items-end gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500">시작일</label>
+                                    <input type="date" className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500">종료일</label>
+                                    <input type="date" className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500">업체번호</label>
+                                    <input type="text" placeholder="검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchBiz} onChange={e => setSearchBiz(e.target.value)} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500">업종</label>
+                                    <input type="text" placeholder="검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchSector} onChange={e => setSearchSector(e.target.value)} />
+                                </div>
+                                <div className="flex gap-2 ml-auto">
+                                    <button onClick={() => { setDateFrom(''); setDateTo(''); setSearchBiz(''); setSearchSector(''); }}
+                                        className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1">
+                                        <Icon name="rotate-ccw" size={14} /> 초기화
+                                    </button>
+                                    <button onClick={loadData}
+                                        className="px-4 py-2 text-sm font-bold text-white bg-[#0055A5] rounded-lg hover:bg-[#004488] transition-colors flex items-center gap-1">
+                                        <Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} /> 새로고침
+                                    </button>
+                                    <button onClick={downloadCSV}
+                                        className="px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1">
+                                        <Icon name="download" size={14} /> CSV
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── 데이터 테이블 ── */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                                <span className="text-sm font-black text-slate-700">상담 목록</span>
+                                <span className="text-xs font-bold text-slate-400">{filteredRecords.length}건 표시 / 전체 {records.length}건</span>
+                            </div>
+                            <div className="overflow-x-auto custom-scroll">
+                                <table className="w-full text-sm border-collapse min-w-[1100px]">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-xs font-black text-slate-500 uppercase tracking-wider border-b-2 border-slate-200">
+                                            <th className="px-4 py-3 text-center w-10">#</th>
+                                            <th className="px-4 py-3 text-center">상담일자</th>
+                                            <th className="px-4 py-3 text-center">업체번호</th>
+                                            <th className="px-4 py-3 text-center">출생년도</th>
+                                            <th className="px-4 py-3 text-center">NICE</th>
+                                            <th className="px-4 py-3 text-center">기보증</th>
+                                            <th className="px-4 py-3 text-center">설립일자</th>
+                                            <th className="px-4 py-3 text-center">업종</th>
+                                            <th className="px-4 py-3 text-center">종업원</th>
+                                            <th className="px-4 py-3 text-center">매출액</th>
+                                            <th className="px-4 py-3 text-center">매출추이</th>
+                                            <th className="px-4 py-3 text-center">설문지</th>
+                                            <th className="px-4 py-3 text-center">리포트</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredRecords.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={13} className="px-4 py-16 text-center">
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                                                            <Icon name="inbox" size={32} className="text-slate-300" />
+                                                        </div>
+                                                        <p className="text-slate-400 font-bold">
+                                                            {records.length === 0 ? '데이터를 불러오려면 상단의 "데이터 불러오기" 버튼을 클릭하세요.' : '검색 결과가 없습니다.'}
+                                                        </p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredRecords.map((r, idx) => (
+                                                <tr key={idx} className="border-b border-slate-100 hover:bg-blue-50/30 transition-colors table-row-animate" style={{ animationDelay: `${idx * 30}ms` }}>
+                                                    <td className="px-4 py-3 text-center text-xs font-bold text-slate-400">{idx + 1}</td>
+                                                    <td className="px-4 py-3 text-center font-bold text-slate-700 whitespace-nowrap">{r.consultDate || '-'}</td>
+                                                    <td className="px-4 py-3 text-center font-black text-[#0055A5]">{r.businessNumber || '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600">{r.birthYear || '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600">{r.niceScore || '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount ? `${r.guaranteedAmount}만` : '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap">{r.foundationDate || '-'}</td>
+                                                    <td className="px-4 py-3 text-center font-bold text-slate-700">{r.sector || '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600">{r.employeeCount || '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap">{r.annualSales ? `${r.annualSales}만` : '-'}</td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        {r.revenueStatus && (
+                                                            <span className={`text-xs px-2 py-1 rounded-full font-bold ${r.revenueStatus.includes('증가') ? 'bg-emerald-50 text-emerald-600' :
+                                                                r.revenueStatus.includes('감소') ? 'bg-red-50 text-red-600' :
+                                                                    'bg-slate-100 text-slate-500'}`}>
+                                                                {r.revenueStatus}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        {r.surveyData && r.surveyData !== '{}' && (
+                                                            <button onClick={() => setSurveyModal(r)}
+                                                                className="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors">
+                                                                📋 보기
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        {r.reportData && (
+                                                            <button onClick={() => setReportModal(r)}
+                                                                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors">
+                                                                📄 보기
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── 설문지 모달 ── */}
+                    <Modal
+                        isOpen={!!surveyModal}
+                        onClose={() => setSurveyModal(null)}
+                        title={`📋 설문지 - ${surveyModal?.businessNumber || ''} (${surveyModal?.consultDate || ''})`}
+                        onPrint={() => printSurvey(surveyModal)}
+                    >
+                        {surveyModal && <SurveyViewer record={surveyModal} />}
+                    </Modal>
+
+                    {/* ── 리포트 모달 ── */}
+                    <Modal
+                        isOpen={!!reportModal}
+                        onClose={() => setReportModal(null)}
+                        title={`📄 AI 진단 리포트 - ${reportModal?.businessNumber || ''} (${reportModal?.consultDate || ''})`}
+                        onPrint={() => printReport(reportModal)}
+                    >
+                        {reportModal && (
+                            <div>
+                                {/* 기본정보 요약 */}
+                                <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <div><span className="text-xs text-slate-500 block">업체번호</span><span className="text-sm font-black text-slate-800">{reportModal.businessNumber || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{reportModal.birthYear || '-'}년</span></div>
+                                        <div><span className="text-xs text-slate-500 block">NICE 점수</span><span className="text-sm font-black text-slate-800">{reportModal.niceScore || '0'}점</span></div>
+                                        <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '0'}만원</span></div>
+                                        <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{reportModal.foundationDate || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{reportModal.sector || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{reportModal.employeeCount || '0'}명</span></div>
+                                        <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{reportModal.annualSales || '-'}만원({reportModal.revenueStatus || '-'})</span></div>
+                                    </div>
+                                </div>
+                                {/* AI 리포트 본문 */}
+                                <div className="space-y-1">
+                                    {formatText(reportModal.reportData
+                                        ?.replace(/([^\n])\s*(\*\*\[경영지원\]\*\*|\[경영지원\])/g, '$1\n\n$2')
+                                        .replace(/((?:\*\*|)\s*\[(?:금융지원|경영지원)\]\s*(?:\*\*|))[:\s]*[\r\n]+\s*/g, '$1 ')
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </Modal>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AdminApp />);
+    </script>
+</body>
+
+</html>

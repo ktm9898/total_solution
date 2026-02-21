@@ -561,6 +561,11 @@
             const [analysisStatus, setAnalysisStatus] = useState('');
             const [aiResponse, setAiResponse] = useState('');
 
+            // Apps Script 상담 데이터 저장 설정 (★ 배포 후 URL을 아래에 붙여넣으세요)
+            const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxm7dsVag6QDW9tkI5YautBl90p0ffPmcmZ96YElNN8qUmn025qOR7zBKOcyiOZC7Cz5A/exec';  // ← Apps Script 웹앱 URL 여기에 붙여넣기
+            const APPS_SCRIPT_KEY = 'Vk9xTm2rWs7pLd4Q';
+            const [saveToast, setSaveToast] = useState(null);
+
             // Google Sheets 지식 DB 상태
             const [sheetConfig, setSheetConfig] = useState({
                 comprehensiveSheetId: localStorage.getItem('comprehensive_sheet_id') || '',
@@ -616,6 +621,42 @@
 
             const handleScoreChange = (index, score) => { const newScores = [...formData.scores]; newScores[index] = score; setFormData({ ...formData, scores: newScores }); };
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
+
+            // ── 상담 데이터 Google Sheets 저장 ──
+            const saveToSheet = async (reportText) => {
+                if (!APPS_SCRIPT_URL) return; // URL 미설정 시 저장 스킵
+                try {
+                    const today = new Date();
+                    const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                    const surveyJson = JSON.stringify({ scores: formData.scores, benefits: formData.benefits, notes: formData.notes });
+                    const payload = {
+                        apiKey: APPS_SCRIPT_KEY,
+                        consultDate: dateStr,
+                        businessNumber: formData.businessNumber,
+                        birthYear: formData.birthYear,
+                        niceScore: formData.niceScore,
+                        guaranteedAmount: formData.guaranteedAmount,
+                        foundationDate: formData.foundationDate,
+                        sector: formData.sector,
+                        employeeCount: formData.employeeCount,
+                        annualSales: formData.annualSales,
+                        revenueStatus: formData.revenueStatus,
+                        surveyData: surveyJson,
+                        reportData: reportText
+                    };
+                    const resp = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const result = await resp.json();
+                    if (result.success) {
+                        setSaveToast({ msg: '✅ 상담 데이터가 저장되었습니다.', type: 'success' });
+                    } else {
+                        setSaveToast({ msg: '⚠️ 저장 실패: ' + (result.error || ''), type: 'error' });
+                    }
+                } catch (err) {
+                    console.error('상담 데이터 저장 실패:', err);
+                    setSaveToast({ msg: '⚠️ 저장 실패: ' + err.message, type: 'error' });
+                }
+                setTimeout(() => setSaveToast(null), 4000);
+            };
 
             // [수정] 텍스트 포매터: 줄간격 최적화 + --- 구분선 제거
             const formatText = (text) => {
@@ -998,6 +1039,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             setAiResponse(rawText);
                             setViewMode('report');
                             window.scrollTo(0, 0);
+                            saveToSheet(rawText); // 상담 데이터 자동 저장
                         } else if (data.error) {
                             console.error('Groq API 에러 상세:', JSON.stringify(data.error, null, 2));
                             throw new Error(`[Groq] ${data.error.type || ''}: ${data.error.message}\n(code: ${data.error.code || 'N/A'})`);
@@ -1052,6 +1094,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             setAiResponse(rawText);
                             setViewMode('report');
                             window.scrollTo(0, 0);
+                            saveToSheet(rawText); // 상담 데이터 자동 저장
                         } else if (data.error && data.error.code === 429) {
                             throw new Error("구글 AI API 사용량이 초과되었습니다 (무료 버전 한도 초과). 약 1~2분 후 다시 시도해 주세요.");
                         } else {
@@ -1123,11 +1166,17 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                 </div>
             );
 
-            if (viewMode === 'report') return <div className="min-h-screen py-8 px-4 bg-slate-100 print:p-0 print:m-0 print:bg-white"><ReportView /></div>;
+            if (viewMode === 'report') return <div className="min-h-screen py-8 px-4 bg-slate-100 print:p-0 print:m-0 print:bg-white">{saveToast && <div className={`fixed top-6 right-6 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm`} style={{ animation: 'slideIn 0.4s ease' }}>{saveToast.msg}</div>}<ReportView /></div>;
 
             return (
                 <div className="min-h-screen py-8 px-4 relative">
+                    {saveToast && <div className={`fixed top-6 right-6 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm`} style={{ animation: 'slideIn 0.4s ease' }}>{saveToast.msg}</div>}
                     <div className="max-w-5xl mx-auto mb-4 no-print flex justify-end items-center gap-2">
+                        {/* 관리자 페이지 링크 */}
+                        <a href="admin.html" className="text-xs px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg bg-slate-700 text-white hover:bg-slate-600 transition-all font-bold">
+                            <Icon name="layout-dashboard" size={14} className="text-purple-400" />
+                            <span>관리자</span>
+                        </a>
                         {/* 지식 DB 설정 버튼 */}
                         <button
                             onClick={() => setShowSheetConfig(!showSheetConfig)}
