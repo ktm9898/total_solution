@@ -1022,12 +1022,8 @@
                                         <Icon name="log-out" size={14} className="group-hover:translate-x-0.5 transition-transform" />
                                         로그아웃
                                     </button>
-                                    <button onClick={loadData} disabled={loading} className="text-xs px-4 py-2 bg-[#0055A5] text-white rounded-lg font-bold hover:bg-[#004488] transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50">
-                                        <Icon name={loading ? "loader-2" : "refresh-cw"} size={14} className={loading ? "animate-spin" : ""} />
-                                        {loading ? "불러오는 중..." : "데이터 불러오기"}
-                                    </button>
                                     <a href="index.html"
-                                        className="text-xs px-4 py-2 border border-blue-200 text-blue-100 rounded-lg font-bold hover:bg-white/10 transition-colors flex items-center gap-2">
+                                        className="text-xs px-4 py-2 bg-[#0055A5] text-white rounded-lg font-bold hover:bg-[#004488] transition-colors flex items-center gap-2">
                                         <Icon name="file-text" size={14} /> 상담 페이지
                                     </a>
                                 </div>
@@ -1099,7 +1095,7 @@
                                     </button>
                                     <button onClick={loadData}
                                         className="px-4 py-2 text-sm font-bold text-white bg-[#0055A5] rounded-lg hover:bg-[#004488] transition-colors flex items-center gap-1">
-                                        <Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} /> 데이터 불러오기
+                                        <Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} /> 새로고침
                                     </button>
                                     <button onClick={downloadCSV}
                                         className="px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1">
