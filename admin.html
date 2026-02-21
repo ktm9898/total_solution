@@ -1135,11 +1135,11 @@
                                             <tr>
                                                 <td colSpan={13} className="px-4 py-16 text-center">
                                                     <div className="flex flex-col items-center gap-3">
-                                                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                                                            <Icon name="inbox" size={32} className="text-slate-300" />
+                                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${loading ? 'bg-blue-50' : 'bg-slate-100'}`}>
+                                                            <Icon name={loading ? "loader-2" : "inbox"} size={32} className={loading ? "text-blue-500 animate-spin" : "text-slate-300"} />
                                                         </div>
-                                                        <p className="text-slate-400 font-bold">
-                                                            {records.length === 0 ? '데이터를 불러오려면 상단의 "데이터 불러오기" 버튼을 클릭하세요.' : '검색 결과가 없습니다.'}
+                                                        <p className={`${loading ? 'text-blue-600' : 'text-slate-400'} font-bold`}>
+                                                            {loading ? '상담 데이터를 불러오는 중입니다...' : (records.length === 0 ? '등록된 상담 데이터가 없습니다.' : '검색 결과가 없습니다.')}
                                                         </p>
                                                     </div>
                                                 </td>
