@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -17,26 +17,77 @@
             font-family: 'Noto Sans KR', sans-serif;
         }
 
-        /* ======================== */
-        /* 인쇄 전용 CSS - index.html 100% 동일 복제 */
-        /* ======================== */
+        .print-only {
+            display: none;
+        }
 
-        /* 리포트 공통 타이포그래피 (화면+인쇄) */
-        #print-area .report-info-label {
+        /* [NEW] 리포트 결과 화면/인쇄 공통 타이포그래피 */
+        .report-view .report-info-label {
             font-size: 8.5pt !important;
         }
 
-        #print-area .ai-text-header {
+        .report-view .ai-text-header {
             font-size: 13pt !important;
             margin-top: 5mm !important;
             margin-bottom: 2mm !important;
         }
 
+        /* [Screen Styles] 화면용 */
+        @media screen {
+            .report-view .report-info-value {
+                font-size: 11pt !important;
+            }
+
+            .report-view .ai-text-line {
+                font-size: 12pt !important;
+                line-height: 1.7 !important;
+            }
+
+            .ai-text-spacer {
+                height: 4px;
+            }
+
+            .report-view .ai-text-header {
+                font-size: 13.5pt !important;
+                margin-top: 24px !important;
+                margin-bottom: 4px !important;
+            }
+        }
+
+        /* [Print Styles] 인쇄용 (화면보다 작게, 간격 최소화) */
         @media print {
 
-            /* 관리자 UI(#root) 숨기기 */
-            #root {
+            /* 관리자 전용 UI 숨기기 */
+            #root,
+            .admin-header,
+            .no-print {
                 display: none !important;
+            }
+
+            .report-view .report-info-value {
+                font-size: 10pt !important;
+            }
+
+            .report-view .ai-text-line {
+                font-size: 11.5pt !important;
+                line-height: 1.6 !important;
+                margin-bottom: 0 !important;
+            }
+
+            .report-view .ai-text-header {
+                font-size: 13pt !important;
+                margin-top: 7mm !important;
+                margin-bottom: 0.5mm !important;
+                padding-bottom: 0 !important;
+                border-bottom-width: 0.5px !important;
+            }
+
+            .ai-text-spacer {
+                height: 0px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+                border: none !important;
             }
 
             @page {
@@ -44,13 +95,16 @@
                 margin: 0;
             }
 
-            /* 리포트 전용 페이지 설정 */
             @page report-fmt {
                 size: A4;
                 margin: 20mm 10mm 10mm 10mm;
             }
 
             .no-print {
+                display: none !important;
+            }
+
+            #root {
                 display: none !important;
             }
 
@@ -62,7 +116,6 @@
                 display: none !important;
             }
 
-            /* body = index.html과 동일 */
             body {
                 padding: 0 !important;
                 background: white !important;
@@ -76,12 +129,10 @@
                 margin: 0 !important;
             }
 
-            /* ====== 설문지 인쇄: 1페이지 고정 ====== */
             body:has(.print-container:not(.report-view)) {
                 height: 297mm !important;
             }
 
-            /* ====== 리포트 인쇄: 다중 페이지 허용 ====== */
             body:has(.report-view) {
                 height: auto !important;
                 display: block !important;
@@ -89,14 +140,7 @@
                 padding: 0 !important;
             }
 
-            /* #print-area가 설문지를 포함할 때: index.html의 .min-h-screen 래퍼와 동일하게 동작 */
-            /* body flex centering이 #print-area를 수직 중앙으로 밀어버리는 것을 방지 */
-            #print-area:has(.print-container:not(.report-view)) {
-                min-height: 297mm;
-            }
-
-            /* + 설문지 컨테이너 */
-            #print-area .print-container {
+            .print-container {
                 box-shadow: none !important;
                 border: 2pt solid #000 !important;
                 width: 190mm !important;
@@ -106,12 +150,11 @@
                 background: white !important;
                 display: flex;
                 flex-direction: column;
-                transform: translateY(10mm) !important;
+                transform: translateY(2.5mm) !important;
                 box-sizing: border-box !important;
             }
 
-            /* + 리포트 컨테이너 */
-            #print-area .report-view.print-container {
+            .report-view.print-container {
                 page: report-fmt !important;
                 transform: none !important;
                 border: none !important;
@@ -124,53 +167,52 @@
                 box-decoration-break: clone !important;
             }
 
-            #print-area .report-view h1 {
+            .report-view h1 {
                 margin-top: 0 !important;
                 padding-top: 0 !important;
             }
 
-            #print-area .report-view .border-b-4 {
+            .report-view .border-b-4 {
                 padding-top: 0 !important;
                 margin-top: 0 !important;
             }
 
-            /* + 공통 인쇄 사이징 */
-            #print-area .p-10 {
+            .p-10 {
                 padding: 0.5rem 1rem !important;
             }
 
-            #print-area h1 {
+            h1 {
                 font-size: 16pt !important;
                 margin-bottom: 0.05rem !important;
             }
 
-            #print-area .text-sm {
+            .text-sm {
                 font-size: 7.5pt !important;
             }
 
-            #print-area .text-xl {
+            .text-xl {
                 font-size: 10.5pt !important;
             }
 
-            #print-area .p-10.space-y-12 {
+            .p-10.space-y-12 {
                 padding: 0.6rem 1.2rem !important;
             }
 
-            #print-area .space-y-12>*+* {
+            .space-y-12>*+* {
                 margin-top: 1.1rem !important;
             }
 
-            #print-area h2 {
+            h2 {
                 font-size: 10.5pt !important;
                 margin-bottom: 0 !important;
             }
 
-            #print-area .mb-6,
-            #print-area .mb-4 {
+            .mb-6,
+            .mb-4 {
                 margin-bottom: 0.3rem !important;
             }
 
-            #print-area .w-1\.5.h-6 {
+            .w-1\.5.h-6 {
                 height: 1rem !important;
                 width: 4px !important;
                 background-color: #0055A5 !important;
@@ -178,27 +220,25 @@
                 print-color-adjust: exact !important;
             }
 
-            /* + 기본정보 그리드 */
-            #print-area .info-grid {
+            .info-grid {
                 display: grid !important;
                 grid-template-columns: repeat(3, 1fr) !important;
                 gap: 0.6rem !important;
             }
 
-            #print-area .info-grid label {
+            .info-grid label {
                 font-size: 8pt !important;
             }
 
-            #print-area .info-grid select,
-            #print-area .info-grid input {
+            .info-grid select,
+            .info-grid input {
                 padding: 0.2rem 0.4rem !important;
                 font-size: 8.5pt !important;
                 height: 26px !important;
                 border: 0.5pt solid #ccc !important;
             }
 
-            /* + 매출현황 */
-            #print-area .revenue-box {
+            .revenue-box {
                 margin-top: 0.5rem !important;
                 padding: 0.4rem 0.8rem !important;
                 gap: 0.6rem !important;
@@ -206,27 +246,26 @@
                 justify-content: space-between !important;
             }
 
-            #print-area .revenue-box span {
+            .revenue-box span {
                 font-size: 7.5pt !important;
             }
 
-            #print-area .revenue-box input {
+            .revenue-box input {
                 width: 70px !important;
                 padding: 0.2rem 0.3rem !important;
                 font-size: 7.5pt !important;
             }
 
-            #print-area .revenue-box label {
+            .revenue-box label {
                 gap: 0.2rem !important;
             }
 
-            #print-area .revenue-box input[type="radio"] {
+            .revenue-box input[type="radio"] {
                 width: 12px !important;
                 height: 12px !important;
             }
 
-            /* + 범례 박스 */
-            #print-area .legend-box {
+            .legend-box {
                 padding: 0.2rem 0.5rem !important;
                 margin-bottom: 0.25rem !important;
                 border: 0.5pt solid #e2e8f0 !important;
@@ -236,27 +275,26 @@
                 gap: 0.05rem !important;
             }
 
-            #print-area .legend-box span {
+            .legend-box span {
                 font-size: 8pt !important;
             }
 
-            #print-area .legend-box div.w-full {
+            .legend-box div.w-full {
                 margin-bottom: 0 !important;
             }
 
-            /* + 테이블 */
-            #print-area table th,
-            #print-area table td {
+            table th,
+            table td {
                 padding: 0.4rem 0.4rem !important;
                 font-size: 9pt !important;
                 border: 0.5pt solid #eee !important;
             }
 
-            #print-area .text-center-print {
+            .text-center-print {
                 text-align: center !important;
             }
 
-            #print-area .w-9.h-9 {
+            .w-9.h-9 {
                 width: 1.2rem !important;
                 height: 1.2rem !important;
                 font-size: 8pt !important;
@@ -264,22 +302,21 @@
                 print-color-adjust: exact !important;
             }
 
-            /* + 하단 그리드 (우대사항 + 애로사항) */
-            #print-area .bottom-grid {
+            .bottom-grid {
                 display: grid !important;
                 grid-template-columns: 1.1fr 0.9fr !important;
                 gap: 1.2rem !important;
                 align-items: stretch !important;
             }
 
-            #print-area .benefit-grid {
+            .benefit-grid {
                 display: grid !important;
                 grid-template-columns: 1fr 1fr !important;
                 gap: 0.35rem !important;
                 width: 100% !important;
             }
 
-            #print-area .benefit-grid label {
+            .benefit-grid label {
                 padding: 0.3rem 0.5rem !important;
                 border: 0.5pt solid #eee !important;
                 font-size: 8pt !important;
@@ -291,7 +328,7 @@
                 margin: 0 !important;
             }
 
-            #print-area .notes-area {
+            .notes-area {
                 min-height: 132px !important;
                 height: 100% !important;
                 font-size: 9pt !important;
@@ -300,13 +337,7 @@
                 box-sizing: border-box !important;
             }
 
-            /* + 리포트 전용 */
-            #print-area .report-view {
-                display: block !important;
-                box-shadow: none !important;
-            }
-
-            #print-area .report-info-container {
+            .report-info-container {
                 border: 1pt solid #ccc !important;
                 background-color: #f8fafc !important;
                 padding: 3mm !important;
@@ -314,74 +345,46 @@
                 border-radius: 4px !important;
             }
 
-            #print-area .report-info-grid {
+            .report-info-grid {
                 display: grid !important;
                 grid-template-columns: repeat(4, 1fr) !important;
                 gap: 2mm !important;
                 row-gap: 2mm !important;
             }
 
-            #print-area .report-info-item {
+            .report-info-item {
                 display: flex !important;
                 flex-direction: column !important;
             }
 
-            #print-area .report-info-label {
+            .report-info-label {
                 font-size: 7.5pt !important;
                 color: #64748b !important;
                 margin-bottom: 0 !important;
                 font-weight: bold !important;
             }
 
-            #print-area .report-info-value {
+            .report-info-value {
                 font-size: 10pt !important;
                 font-weight: 800 !important;
                 color: #000 !important;
             }
 
-            /* + AI 텍스트 */
-            #print-area .ai-text-line {
+            .ai-text-line {
                 font-size: 10.5pt !important;
                 line-height: 1.6 !important;
                 text-align: justify !important;
             }
 
-            #print-area .ai-text-header {
+            .ai-text-header {
                 font-size: 11.5pt !important;
                 font-weight: 900 !important;
                 color: #000 !important;
                 display: block;
             }
 
-            #print-area .ai-text-bold {
+            .ai-text-bold {
                 font-weight: 800 !important;
-            }
-
-            #print-area .ai-text-spacer {
-                height: 0px !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: block !important;
-                border: none !important;
-            }
-
-            /* 리포트 ai-text 인쇄 전용 오버라이드 */
-            #print-area .report-view .ai-text-line {
-                font-size: 11.5pt !important;
-                line-height: 1.6 !important;
-                margin-bottom: 0 !important;
-            }
-
-            #print-area .report-view .ai-text-header {
-                font-size: 13pt !important;
-                margin-top: 7mm !important;
-                margin-bottom: 0.5mm !important;
-                padding-bottom: 0 !important;
-                border-bottom-width: 0.5px !important;
-            }
-
-            #print-area .report-view .report-info-value {
-                font-size: 10pt !important;
             }
         }
 
@@ -521,6 +524,13 @@
                 smallBusiness: '영세자영업(간이과세자)', revenueDecrease: '매출감소'
             };
 
+            const scoreLabels = {
+                1: { text: "전혀 그렇지 않다", color: "bg-red-50 text-red-600 border-red-100" },
+                2: { text: "그렇지 않다", color: "bg-orange-50 text-orange-600 border-orange-100" },
+                3: { text: "그렇다", color: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+                4: { text: "매우 그렇다", color: "bg-blue-50 text-blue-600 border-blue-100" }
+            };
+
             const scores = surveyObj.scores || Array(11).fill(0);
             const benefits = surveyObj.benefits || {};
             const notes = surveyObj.notes || '';
@@ -550,22 +560,30 @@
                                 <tr className="bg-slate-50 text-xs font-black text-slate-500 border-b border-slate-200">
                                     <th className="p-2 text-center w-24">구분</th>
                                     <th className="p-2 text-left">진단문항</th>
-                                    <th className="p-2 text-center w-16">점수</th>
+                                    <th className="p-3 text-center w-32 whitespace-nowrap">진단결과</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {categories.map(cat =>
-                                    questions.slice(cat.startIdx, cat.startIdx + cat.count).map((q, qIdx) => (
-                                        <tr key={cat.startIdx + qIdx} className="border-b border-slate-100">
-                                            {qIdx === 0 && <td rowSpan={cat.count} className="p-2 text-center font-bold text-xs text-[#0055A5] bg-slate-50/50 border-r border-slate-100">{cat.name}</td>}
-                                            <td className="p-2 text-slate-700">{q}</td>
-                                            <td className="p-2 text-center">
-                                                <span className={`inline-flex w-7 h-7 items-center justify-center rounded text-xs font-black ${scores[cat.startIdx + qIdx] > 0 ? 'bg-[#0055A5] text-white' : 'bg-slate-100 text-slate-300'}`}>
-                                                    {scores[cat.startIdx + qIdx] || '-'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    questions.slice(cat.startIdx, cat.startIdx + cat.count).map((q, qIdx) => {
+                                        const score = scores[cat.startIdx + qIdx];
+                                        const label = scoreLabels[score];
+                                        return (
+                                            <tr key={cat.startIdx + qIdx} className="border-b border-slate-100">
+                                                {qIdx === 0 && <td rowSpan={cat.count} className="p-3 text-center font-bold text-xs text-[#0055A5] bg-slate-50/50 border-r border-slate-100">{cat.name}</td>}
+                                                <td className="p-3 text-slate-700 font-medium">{q}</td>
+                                                <td className="p-3 text-center">
+                                                    {label ? (
+                                                        <span className={`inline-flex px-3 py-1 rounded-sm border text-[11px] font-black whitespace-nowrap ${label.color}`}>
+                                                            {label.text}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -795,8 +813,8 @@
                             const isSelected = scores[globalIdx] === s;
                             return `<td class="p-4 text-center">
                                 <div class="w-9 h-9" style="border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;
-                                    ${isSelected ? 'background:#0055A5;color:white;border:1px solid #0055A5;' : 'background:white;border:0.5pt solid #e2e8f0;color:#cbd5e1;'}
-                                    -webkit-print-color-adjust:exact;print-color-adjust:exact;">${s}</div>
+                                    ${isSelected ? 'background:#0055A5 !important;color:white !important;border:1px solid #0055A5 !important;' : 'background:white !important;border:0.5pt solid #e2e8f0 !important;color:#cbd5e1 !important;'}
+                                    -webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;">${s}</div>
                             </td>`;
                         }).join('');
                         tableRows += `<tr class="border-b border-slate-100">${catCell}<td class="p-4 text-base text-slate-700 font-medium leading-snug text-center-print">${q}</td>${scoreCells}</tr>`;
@@ -807,8 +825,10 @@
                 const benefitGrid = benefitLabels.map(item => {
                     const checked = benefits[item.key];
                     return `<label class="flex items-start gap-3 px-4 py-2.5 rounded-sm border cursor-pointer ${checked ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-                        <input type="checkbox" ${checked ? 'checked' : ''} disabled class="mt-0.5 w-5 h-5 accent-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;" />
-                        <span class="text-sm font-bold leading-tight ${checked ? 'text-[#0055A5]' : 'text-slate-600'}">${item.label}</span>
+                        <input type="checkbox" ${checked ? 'checked' : ''} onclick="return false;" class="mt-0.5 w-5 h-5 accent-[#0055A5]" style="-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;" />
+                        <span class="text-sm font-bold leading-tight group-hover:text-slate-900 transition-colors">
+                            <span class="${checked ? 'text-[#0055A5]' : 'text-slate-600'} print-only" style="${checked ? 'color:#0055A5 !important;' : ''} -webkit-print-color-adjust:exact !important;">${item.label.split('(')[0].trim()}</span>
+                        </span>
                     </label>`;
                 }).join('');
 
@@ -828,58 +848,52 @@
                             </div>
                         </div>
 
-                        <!-- 본문: p-10 space-y-12 -->
                         <div class="p-10 space-y-12">
-                            <!-- 1. 기본정보 -->
                             <section>
                                 <div class="flex items-center gap-2 mb-4">
-                                    <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
+                                    <div class="w-1.5 h-6 bg-[#0055A5]"></div>
                                     <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center">
                                         1. 기본정보
-                                        <span class="text-lg text-slate-400 ml-1 font-extrabold">(${record.businessNumber || ''})</span>
+                                        <span class="text-lg text-slate-400 ml-1 font-extrabold flex items-center">
+                                            (
+                                            <input
+                                                type="text"
+                                                readonly
+                                                class="w-[4.8rem] bg-transparent border-b-2 border-slate-300 outline-none text-lg font-bold text-[#0055A5] text-center mx-1 print:border-none print:p-0"
+                                                value="${record.businessNumber || ''}"
+                                            />
+                                            )
+                                        </span>
                                     </h2>
                                 </div>
                                 <div class="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" value="${record.niceScore || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" value="${record.guaranteedAmount || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" value="${record.foundationDate || '-'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" value="${record.sector || '-'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" value="${record.employeeCount || '0'}" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-base font-bold" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.niceScore || '0'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '0'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.foundationDate || '-'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.sector || '-'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.employeeCount || '0'}" /></div>
                                 </div>
                                 <div class="revenue-box mt-8 flex flex-wrap items-center gap-10 p-5 bg-slate-50 rounded-sm border border-slate-100">
                                     <div class="flex items-center gap-4">
                                         <span class="text-sm font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
                                         <div class="flex items-center gap-2">
-                                            <input type="number" value="${record.annualSales || ''}" readonly class="w-40 p-2.5 bg-white border border-slate-200 rounded-sm text-base font-bold text-right" />
+                                            <input type="number" readonly class="w-40 p-2.5 bg-white border border-slate-200 rounded-sm outline-none text-base font-bold text-right" value="${record.annualSales || ''}" />
                                             <span class="text-xs font-bold text-slate-500">만원/년</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-5">
                                         ${["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map(opt => {
                     const isChecked = record.revenueStatus === opt;
-                    return `<label class="flex items-center gap-2 cursor-pointer">
-                                                <input type="radio" name="revenue-print" ${isChecked ? 'checked' : ''} disabled class="w-4 h-4 accent-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;" />
-                                                <span class="text-sm font-bold ${isChecked ? 'text-[#0055A5]' : 'text-slate-500'}">${opt}</span>
-                                            </label>`;
+                    return `<label class="flex items-center gap-2 cursor-pointer group"><input type="radio" class="w-4 h-4 accent-[#0055A5]" ${isChecked ? 'checked' : ''} onclick="return false;" /><span class="text-sm font-bold ${isChecked ? 'text-[#0055A5]' : 'text-slate-500'}" style="${isChecked ? 'color:#0055A5 !important;' : ''} -webkit-print-color-adjust:exact !important;">${opt}</span></label>`;
                 }).join('')}
                                     </div>
                                 </div>
                             </section>
 
-                            <!-- 2. 사업운영 주요 현황 -->
                             <section>
-                                <div class="flex items-center gap-2 mb-4"><div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div><h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">2. 사업운영 주요 현황</h2></div>
-                                <div class="legend-box mb-5 flex flex-wrap gap-5 bg-blue-50/50 p-4 border border-blue-100/50 rounded-sm shadow-sm">
-                                    <div class="w-full no-print-bg"><span class="text-xs font-black text-[#0055A5] uppercase tracking-widest underline decoration-blue-200 underline-offset-4">진단 지표 척도 안내 (1~4점)</span></div>
-                                    <div class="flex gap-6">
-                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">1:</b> 전혀 그렇지 않다</span>
-                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">2:</b> 그렇지 않다</span>
-                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">3:</b> 그렇다</span>
-                                        <span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">4:</b> 매우 그렇다</span>
-                                    </div>
-                                </div>
-                                </div>
+                                <div class="flex items-center gap-2 mb-4"><div class="w-1.5 h-6 bg-[#0055A5]"></div><h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">2. 사업운영 주요 현황</h2></div>
+                                <div class="legend-box mb-5 flex flex-wrap gap-5 bg-blue-50/50 p-4 border border-blue-100/50 rounded-sm shadow-sm"><div class="w-full no-print-bg"><span class="text-xs font-black text-[#0055A5] uppercase tracking-widest underline decoration-blue-200 underline-offset-4">진단 지표 척도 안내 (1~4점)</span></div><div class="flex gap-6"><span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">1:</b> 전혀 그렇지 않다</span><span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">2:</b> 그렇지 않다</span><span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">3:</b> 그렇다</span><span class="text-sm font-bold text-slate-700"><b class="text-[#0055A5]">4:</b> 매우 그렇다</span></div></div>
                                 <div class="overflow-x-auto border-t-2 border-slate-800">
                                     <table class="w-full border-collapse">
                                         <thead><tr class="bg-slate-50 text-xs font-black text-slate-500 border-b border-slate-200"><th class="p-4 text-center w-28 text-center-print">구분</th><th class="p-4 text-center text-center-print">진단문항</th><th class="p-4 text-center w-16">1</th><th class="p-4 text-center w-16">2</th><th class="p-4 text-center w-16">3</th><th class="p-4 text-center w-16">4</th></tr></thead>
@@ -888,22 +902,9 @@
                                 </div>
                             </section>
 
-                            <!-- 하단 2열: 우대사항 + 애로사항 -->
-                            <div class="bottom-grid grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch">
-                                <section class="flex flex-col">
-                                    <div class="flex items-center gap-2 mb-4">
-                                        <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
-                                        <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">3. 우대사항 체크</h2>
-                                    </div>
-                                    <div class="benefit-grid space-y-1.5">${benefitGrid}</div>
-                                </section>
-                                <section class="flex flex-col">
-                                    <div class="flex items-center gap-2 mb-4">
-                                        <div class="w-1.5 h-6 bg-[#0055A5]" style="-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div>
-                                        <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">※ 기타 애로사항</h2>
-                                    </div>
-                                    <textarea class="notes-area w-full flex-grow p-5 border border-slate-200 rounded-sm text-base bg-slate-50/50 font-medium leading-relaxed" readonly style="color:${notes ? '#1e293b' : '#cbd5e1'};resize:none;">${notes || '구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요.'}</textarea>
-                                </section>
+                            <div class="bottom-grid">
+                                <section class="flex flex-col"><div class="flex items-center gap-2 mb-4"><div class="w-1.5 h-6 bg-[#0055A5]"></div><h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">3. 우대사항 체크</h2></div><div class="benefit-grid">${benefitGrid}</div></section>
+                                <section class="flex flex-col"><div class="flex items-center gap-2 mb-4"><div class="w-1.5 h-6 bg-[#0055A5]"></div><h2 class="text-xl font-black text-slate-800 uppercase tracking-tight">※ 기타 애로사항</h2></div><textarea readonly class="notes-area w-full flex-grow p-5 border border-slate-200 rounded-sm text-base bg-slate-50/50 outline-none resize-none font-medium leading-relaxed" style="color:${notes ? '#1e293b' : '#cbd5e1'}">${notes || '구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요.'}</textarea></section>
                             </div>
                         </div>
                     </div>
