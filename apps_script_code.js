@@ -5,9 +5,9 @@
  *
  *  [사용법]
  *  1. Google Sheets에서 새 스프레드시트를 생성합니다.
- *  2. 시트 첫 행(A1~L1)에 아래 12개 헤더를 입력합니다:
+ *  2. 시트 첫 행(A1~M1)에 아래 13개 헤더를 입력합니다:
  *     상담일자 | 업체번호 | 출생년도 | NICE CB점수 | 기보증금액 |
- *     설립일자 | 업종 | 종업원수 | 매출액 | 매출추이 | 설문지 | 리포트
+ *     설립일자 | 업종 | 종업원수 | 매출액 | 매출추이 | 진단모델 | 설문지 | 리포트
  *
  *  3. 확장 프로그램 > Apps Script 를 클릭합니다.
  *  4. 이 파일의 전체 코드를 붙여넣고 저장합니다.
@@ -28,6 +28,9 @@ const SHEET_NAME = 'Sheet1'; // 상담 데이터가 저장될 시트 이름
 
 // ★ API 비밀키 (index.html, admin.html 코드에도 동일한 값이 들어 있어야 합니다)
 const API_SECRET = 'Vk9xTm2rWs7pLd4Q';
+
+// ★ 관리자 페이지 접속 비밀번호 (admin.html의 비밀번호가 이 값과 일치해야 합니다)
+const ADMIN_PASSWORD = '2082';
 
 // ── 인증 헬퍼 ──────────────────────────────────────
 function unauthorizedResponse() {
@@ -50,7 +53,7 @@ function doPost(e) {
             return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
         }
 
-        // 12열 순서대로 행 추가 (apiKey는 저장하지 않음)
+        // 13열 순서대로 행 추가 (apiKey는 저장하지 않음)
         sheet.appendRow([
             data.consultDate || '',   // A: 상담일자
             data.businessNumber || '',   // B: 업체번호
@@ -62,8 +65,9 @@ function doPost(e) {
             data.employeeCount || '',   // H: 종업원수
             data.annualSales || '',   // I: 매출액
             data.revenueStatus || '',   // J: 매출추이
-            data.surveyData || '',   // K: 설문지 (JSON 문자열)
-            data.reportData || ''    // L: 리포트 (텍스트)
+            data.modelName || '',      // K: 진단모델 (AI 모델명)
+            data.surveyData || '',   // L: 설문지 (JSON 문자열)
+            data.reportData || ''    // M: 리포트 (텍스트)
         ]);
 
         return jsonResponse({ success: true, message: '저장 완료' });
@@ -81,6 +85,12 @@ function doGet(e) {
             return unauthorizedResponse();
         }
 
+        // ★ 관리자 비밀번호 검증 (쿼리 파라미터: ?pw=...)
+        const pw = (e && e.parameter && e.parameter.pw) || '';
+        if (pw !== ADMIN_PASSWORD) {
+            return jsonResponse({ success: false, error: '잘못된 비밀번호입니다.' });
+        }
+
         const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
 
         if (!sheet) {
@@ -93,7 +103,7 @@ function doGet(e) {
             return jsonResponse({ success: true, data: [], total: 0 });
         }
 
-        const range = sheet.getRange(2, 1, lastRow - 1, 12); // 2행부터 마지막 행까지, 12열
+        const range = sheet.getRange(2, 1, lastRow - 1, 13); // 2행부터 마지막 행까지, 13열
         const values = range.getValues();
 
         const records = values.map((row, idx) => ({
@@ -108,8 +118,9 @@ function doGet(e) {
             employeeCount: String(row[7]),
             annualSales: String(row[8]),
             revenueStatus: String(row[9]),
-            surveyData: String(row[10]),
-            reportData: String(row[11])
+            modelName: String(row[10]), // K: 진단모델
+            surveyData: String(row[11]), // L: 설문지
+            reportData: String(row[12])  // M: 리포트
         }));
 
         // 최신 순으로 정렬

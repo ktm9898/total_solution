@@ -623,7 +623,7 @@
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
 
             // ── 상담 데이터 Google Sheets 저장 ──
-            const saveToSheet = async (reportText) => {
+            const saveToSheet = async (reportText, modelName) => {
                 if (!APPS_SCRIPT_URL) return; // URL 미설정 시 저장 스킵
                 try {
                     const today = new Date();
@@ -641,6 +641,7 @@
                         employeeCount: formData.employeeCount,
                         annualSales: formData.annualSales,
                         revenueStatus: formData.revenueStatus,
+                        modelName: modelName || '',
                         surveyData: surveyJson,
                         reportData: reportText
                     };
@@ -1039,7 +1040,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             setAiResponse(rawText);
                             setViewMode('report');
                             window.scrollTo(0, 0);
-                            saveToSheet(rawText); // 상담 데이터 자동 저장
+                            saveToSheet(rawText, groqModelName); // 상담 데이터 자동 저장
                         } else if (data.error) {
                             console.error('Groq API 에러 상세:', JSON.stringify(data.error, null, 2));
                             throw new Error(`[Groq] ${data.error.type || ''}: ${data.error.message}\n(code: ${data.error.code || 'N/A'})`);
@@ -1094,7 +1095,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                             setAiResponse(rawText);
                             setViewMode('report');
                             window.scrollTo(0, 0);
-                            saveToSheet(rawText); // 상담 데이터 자동 저장
+                            saveToSheet(rawText, displayModelName); // 상담 데이터 자동 저장
                         } else if (data.error && data.error.code === 429) {
                             throw new Error("구글 AI API 사용량이 초과되었습니다 (무료 버전 한도 초과). 약 1~2분 후 다시 시도해 주세요.");
                         } else {

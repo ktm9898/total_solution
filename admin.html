@@ -645,15 +645,23 @@
         const Login = ({ onLogin }) => {
             const [password, setPassword] = useState('');
             const [error, setError] = useState(false);
+            const [isLoading, setIsLoading] = useState(false);
 
-            const handleSubmit = (e) => {
+            const handleSubmit = async (e) => {
                 e.preventDefault();
-                if (password === '2082') {
-                    onLogin();
-                } else {
+                setIsLoading(true);
+                setError(false);
+
+                try {
+                    const success = await onLogin(password);
+                    if (!success) {
+                        setError(true);
+                        setPassword('');
+                    }
+                } catch (err) {
                     setError(true);
-                    setPassword('');
-                    setTimeout(() => setError(false), 2000);
+                } finally {
+                    setIsLoading(false);
                 }
             };
 
@@ -674,19 +682,22 @@
                                     <input
                                         type="password"
                                         autoFocus
+                                        disabled={isLoading}
                                         className={`w-full px-4 py-4 bg-slate-50 border-2 rounded-xl outline-none transition-all text-center text-2xl font-black tracking-[0.5em] ${error ? 'border-red-500 bg-red-50 animate-bounce' : 'border-slate-100 focus:border-[#0055A5] focus:bg-white'}`}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••••"
                                     />
-                                    {error && <p className="text-red-500 text-xs font-bold text-center mt-2">비밀번호가 일치하지 않습니다.</p>}
+                                    {error && <p className="text-red-500 text-xs font-bold text-center mt-2">비밀번호가 일치하지 않거나 서버 오류가 발생했습니다.</p>}
                                 </div>
                             </div>
                             <button
                                 type="submit"
-                                className="w-full py-4 bg-[#0055A5] text-white rounded-xl font-black text-lg shadow-lg hover:bg-[#004488] active:transform active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                                disabled={isLoading}
+                                className="w-full py-4 bg-[#0055A5] text-white rounded-xl font-black text-lg shadow-lg hover:bg-[#004488] active:transform active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                             >
-                                <Icon name="log-in" size={20} /> 접속하기
+                                <Icon name={isLoading ? "loader-2" : "log-in"} size={20} className={isLoading ? "animate-spin" : ""} />
+                                {isLoading ? "인증 중..." : "접속하기"}
                             </button>
                         </form>
                         <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
@@ -703,11 +714,14 @@
             const APPS_SCRIPT_KEY = 'Vk9xTm2rWs7pLd4Q';
 
             const [isAuthenticated, setIsAuthenticated] = useState(() => {
-                return localStorage.getItem('admin_authenticated') === 'true';
+                return !!sessionStorage.getItem('admin_pw');
             });
             const [records, setRecords] = useState([]);
             const [loading, setLoading] = useState(false);
             const [toast, setToast] = useState(null);
+
+            // 세션 스토리지에서 암호 가져오기
+            const getStoredPw = () => sessionStorage.getItem('admin_pw') || '';
 
             // 필터
             const [dateFrom, setDateFrom] = useState('');
@@ -722,34 +736,39 @@
 
 
             // 데이터 로드
-            const loadData = useCallback(async () => {
-                if (!isAuthenticated) return;
+            const loadData = useCallback(async (forcedPw) => {
+                const currentPw = forcedPw || getStoredPw();
+                if (!currentPw) return false;
+
                 if (!APPS_SCRIPT_URL) {
                     setToast({ message: 'APPS_SCRIPT_URL이 설정되지 않았습니다. 코드 내 URL을 확인하세요.', type: 'error' });
-                    return;
+                    return false;
                 }
                 setLoading(true);
                 try {
-                    const resp = await fetch(`${APPS_SCRIPT_URL}?key=${encodeURIComponent(APPS_SCRIPT_KEY)}`);
+                    const resp = await fetch(`${APPS_SCRIPT_URL}?key=${encodeURIComponent(APPS_SCRIPT_KEY)}&pw=${encodeURIComponent(currentPw)}`);
                     const data = await resp.json();
                     if (data.success) {
                         setRecords(data.data || []);
                         setToast({ message: `${data.total || 0}건의 상담 데이터를 불러왔습니다.`, type: 'success' });
+                        return true;
                     } else {
                         throw new Error(data.error || '알 수 없는 오류');
                     }
                 } catch (err) {
                     setToast({ message: '데이터 로드 실패: ' + err.message, type: 'error' });
+                    return false;
+                } finally {
+                    setLoading(false);
                 }
-                setLoading(false);
-            }, [isAuthenticated, APPS_SCRIPT_URL, APPS_SCRIPT_KEY]);
+            }, [APPS_SCRIPT_URL, APPS_SCRIPT_KEY]);
 
             // 초기 로딩
             useEffect(() => {
                 if (isAuthenticated) {
                     loadData();
                 }
-            }, [isAuthenticated, loadData]);
+            }, [isAuthenticated]);
 
             // 필터링
             const filteredRecords = useMemo(() => {
@@ -793,14 +812,19 @@
                 URL.revokeObjectURL(url);
             };
 
-            const handleLogin = () => {
-                setIsAuthenticated(true);
-                localStorage.setItem('admin_authenticated', 'true');
+            const handleLogin = async (pw) => {
+                const success = await loadData(pw);
+                if (success) {
+                    sessionStorage.setItem('admin_pw', pw);
+                    setIsAuthenticated(true);
+                    return true;
+                }
+                return false;
             };
 
             const handleLogout = () => {
                 setIsAuthenticated(false);
-                localStorage.removeItem('admin_authenticated');
+                sessionStorage.removeItem('admin_pw');
             };
 
             if (!isAuthenticated) {
@@ -1126,6 +1150,7 @@
                                             <th className="px-4 py-3 text-center">종업원</th>
                                             <th className="px-4 py-3 text-center">매출액</th>
                                             <th className="px-4 py-3 text-center">매출추이</th>
+                                            <th className="px-4 py-3 text-center">진단모델</th>
                                             <th className="px-4 py-3 text-center">설문지</th>
                                             <th className="px-4 py-3 text-center">리포트</th>
                                         </tr>
@@ -1133,7 +1158,7 @@
                                     <tbody>
                                         {filteredRecords.length === 0 ? (
                                             <tr>
-                                                <td colSpan={13} className="px-4 py-16 text-center">
+                                                <td colSpan={14} className="px-4 py-16 text-center">
                                                     <div className="flex flex-col items-center gap-3">
                                                         <div className={`w-16 h-16 rounded-full flex items-center justify-center ${loading ? 'bg-blue-50' : 'bg-slate-100'}`}>
                                                             <Icon name={loading ? "loader-2" : "inbox"} size={32} className={loading ? "text-blue-500 animate-spin" : "text-slate-300"} />
@@ -1165,6 +1190,13 @@
                                                                 {r.revenueStatus}
                                                             </span>
                                                         )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-bold text-slate-500 whitespace-nowrap">
+                                                        {r.modelName ? (
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase ${r.modelName.includes('groq') ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                {r.modelName.replace('gemini-', '').replace('flash-preview', 'FP')}
+                                                            </span>
+                                                        ) : '-'}
                                                     </td>
                                                     <td className="px-4 py-3 text-center">
                                                         {r.surveyData && r.surveyData !== '{}' && (
