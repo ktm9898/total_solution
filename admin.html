@@ -222,7 +222,7 @@
 
             .info-grid {
                 display: grid !important;
-                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-columns: repeat(4, 1fr) !important;
                 gap: 0.6rem !important;
             }
 
@@ -541,7 +541,7 @@
                     <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
                         <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div><span className="text-xs text-slate-500 block">업체번호</span><span className="text-sm font-black text-slate-800">{record.businessNumber || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{record.businessType || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{record.birthYear || '-'}년</span></div>
                             <div><span className="text-xs text-slate-500 block">NICE CB점수</span><span className="text-sm font-black text-slate-800">{record.niceScore || '0'}점</span></div>
                             <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '0'}만원</span></div>
@@ -619,7 +619,7 @@
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col ring-1 ring-slate-400" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                             <h2 className="text-lg font-black text-slate-800">{title}</h2>
                             <div className="flex items-center gap-3">
@@ -860,9 +860,12 @@
                             <p class="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
                         </div>
                         <div class="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-center">기본정보 요약</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-baseline gap-2">
+                                <span>기본정보 요약</span>
+                                <span class="text-xs font-bold lowercase text-slate-400 font-normal">(업체번호 : ${record.businessNumber || '-'})</span>
+                            </h3>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업체번호</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessNumber || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">사업자구분</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessType || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">출생년도</span><span class="text-sm font-black text-slate-800 report-info-value">${record.birthYear || '-'}년</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">NICE 점수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.niceScore || '0'}점</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '0'}만원</span></div>
@@ -959,22 +962,14 @@
                                     <div class="w-1.5 h-6 bg-[#0055A5]"></div>
                                     <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center">
                                         1. 기본정보
-                                        <span class="text-lg text-slate-400 ml-1 font-extrabold flex items-center">
-                                            (
-                                            <input
-                                                type="text"
-                                                readonly
-                                                class="w-[4.8rem] bg-transparent border-b-2 border-slate-300 outline-none text-lg font-bold text-[#0055A5] text-center mx-1 print:border-none print:p-0"
-                                                value="${record.businessNumber || ''}"
-                                            />
-                                            )
-                                        </span>
                                     </h2>
                                 </div>
-                                <div class="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
+                                <div class="info-grid grid grid-cols-1 md:grid-cols-4 gap-y-5 gap-x-8">
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업체번호</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.businessNumber || ''}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.niceScore || '0'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '0'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">사업자구분</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessType || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.foundationDate || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.sector || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.employeeCount || '0'}" /></div>
@@ -1145,6 +1140,7 @@
                                             <th className="px-4 py-3 text-center">출생년도</th>
                                             <th className="px-4 py-3 text-center">NICE</th>
                                             <th className="px-4 py-3 text-center">기보증</th>
+                                            <th className="px-4 py-3 text-center">사업자</th>
                                             <th className="px-4 py-3 text-center">설립일자</th>
                                             <th className="px-4 py-3 text-center">업종</th>
                                             <th className="px-4 py-3 text-center">종업원</th>
@@ -1158,7 +1154,7 @@
                                     <tbody>
                                         {filteredRecords.length === 0 ? (
                                             <tr>
-                                                <td colSpan={14} className="px-4 py-16 text-center">
+                                                <td colSpan={15} className="px-4 py-16 text-center">
                                                     <div className="flex flex-col items-center gap-3">
                                                         <div className={`w-16 h-16 rounded-full flex items-center justify-center ${loading ? 'bg-blue-50' : 'bg-slate-100'}`}>
                                                             <Icon name={loading ? "loader-2" : "inbox"} size={32} className={loading ? "text-blue-500 animate-spin" : "text-slate-300"} />
@@ -1178,6 +1174,12 @@
                                                     <td className="px-4 py-3 text-center text-slate-600">{r.birthYear || '-'}</td>
                                                     <td className="px-4 py-3 text-center text-slate-600">{r.niceScore || '-'}</td>
                                                     <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount ? `${r.guaranteedAmount}만` : '-'}</td>
+                                                    <td className="px-4 py-3 text-center text-xs font-bold text-slate-500">
+                                                        {r.businessType === '법인' ?
+                                                            <span className="bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100">법인</span> :
+                                                            <span className="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100">개인</span>
+                                                        }
+                                                    </td>
                                                     <td className="px-4 py-3 text-center text-slate-600 whitespace-nowrap">{r.foundationDate || '-'}</td>
                                                     <td className="px-4 py-3 text-center font-bold text-slate-700">{r.sector || '-'}</td>
                                                     <td className="px-4 py-3 text-center text-slate-600">{r.employeeCount || '-'}</td>
@@ -1237,16 +1239,19 @@
                     <Modal
                         isOpen={!!reportModal}
                         onClose={() => setReportModal(null)}
-                        title={`📄 AI 진단 리포트 - ${reportModal?.businessNumber || ''} (${reportModal?.consultDate || ''})`}
+                        title={`📄 AI 진단 리포트`}
                         onPrint={() => printReport(reportModal)}
                     >
                         {reportModal && (
                             <div>
                                 {/* 기본정보 요약 */}
                                 <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6">
-                                    <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보 요약</h3>
+                                    <div className="flex items-baseline gap-2 mb-3 border-b border-slate-200 pb-1">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">기본정보 요약</h3>
+                                        <span className="text-xs font-bold text-slate-400 lowercase">(업체번호 : {reportModal.businessNumber || '-'})</span>
+                                    </div>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <div><span className="text-xs text-slate-500 block">업체번호</span><span className="text-sm font-black text-slate-800">{reportModal.businessNumber || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{reportModal.businessType || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{reportModal.birthYear || '-'}년</span></div>
                                         <div><span className="text-xs text-slate-500 block">NICE 점수</span><span className="text-sm font-black text-slate-800">{reportModal.niceScore || '0'}점</span></div>
                                         <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '0'}만원</span></div>

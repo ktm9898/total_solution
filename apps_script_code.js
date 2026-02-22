@@ -5,8 +5,8 @@
  *
  *  [사용법]
  *  1. Google Sheets에서 새 스프레드시트를 생성합니다.
- *  2. 시트 첫 행(A1~M1)에 아래 13개 헤더를 입력합니다:
- *     상담일자 | 업체번호 | 출생년도 | NICE CB점수 | 기보증금액 |
+ *  2. 시트 첫 행(A1~N1)에 아래 14개 헤더를 입력합니다:
+ *     상담일자 | 업체번호 | 출생년도 | NICE CB점수 | 기보증금액 | 사업자구분 |
  *     설립일자 | 업종 | 종업원수 | 매출액 | 매출추이 | 진단모델 | 설문지 | 리포트
  *
  *  3. 확장 프로그램 > Apps Script 를 클릭합니다.
@@ -60,14 +60,15 @@ function doPost(e) {
             data.birthYear || '',   // C: 출생년도
             data.niceScore || '',   // D: NICE CB점수
             data.guaranteedAmount || '', // E: 기보증금액
-            data.foundationDate || '',   // F: 설립일자
-            data.sector || '',   // G: 업종
-            data.employeeCount || '',   // H: 종업원수
-            data.annualSales || '',   // I: 매출액
-            data.revenueStatus || '',   // J: 매출추이
-            data.modelName || '',      // K: 진단모델 (AI 모델명)
-            data.surveyData || '',   // L: 설문지 (JSON 문자열)
-            data.reportData || ''    // M: 리포트 (텍스트)
+            data.businessType || '',    // F: 사업자구분 (개인/법인)
+            data.foundationDate || '',   // G: 설립일자
+            data.sector || '',   // H: 업종
+            data.employeeCount || '',   // I: 종업원수
+            data.annualSales || '',   // J: 매출액
+            data.revenueStatus || '',   // K: 매출추이
+            data.modelName || '',      // L: 진단모델 (AI 모델명)
+            data.surveyData || '',   // M: 설문지 (JSON 문자열)
+            data.reportData || ''    // N: 리포트 (텍스트)
         ]);
 
         return jsonResponse({ success: true, message: '저장 완료' });
@@ -103,7 +104,7 @@ function doGet(e) {
             return jsonResponse({ success: true, data: [], total: 0 });
         }
 
-        const range = sheet.getRange(2, 1, lastRow - 1, 13); // 2행부터 마지막 행까지, 13열
+        const range = sheet.getRange(2, 1, lastRow - 1, 14); // 2행부터 마지막 행까지, 14열
         const values = range.getValues();
 
         const records = values.map((row, idx) => ({
@@ -113,14 +114,15 @@ function doGet(e) {
             birthYear: String(row[2]),
             niceScore: String(row[3]),
             guaranteedAmount: String(row[4]),
-            foundationDate: row[5] ? formatDate(row[5]) : '',
-            sector: String(row[6]),
-            employeeCount: String(row[7]),
-            annualSales: String(row[8]),
-            revenueStatus: String(row[9]),
-            modelName: String(row[10]), // K: 진단모델
-            surveyData: String(row[11]), // L: 설문지
-            reportData: String(row[12])  // M: 리포트
+            businessType: String(row[5]), // F: 사업자구분
+            foundationDate: row[6] ? formatDate(row[6]) : '', // G: 설립일자
+            sector: String(row[7]),
+            employeeCount: String(row[8]),
+            annualSales: String(row[9]),
+            revenueStatus: String(row[10]),
+            modelName: String(row[11]), // L: 진단모델
+            surveyData: String(row[12]), // M: 설문지
+            reportData: String(row[13])  // N: 리포트
         }));
 
         // 최신 순으로 정렬

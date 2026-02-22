@@ -250,7 +250,7 @@
 
             .info-grid {
                 display: grid !important;
-                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-columns: repeat(4, 1fr) !important;
                 gap: 0.6rem !important;
             }
 
@@ -599,7 +599,7 @@
             useEffect(() => { localStorage.setItem('selected_model', selectedModel); }, [selectedModel]);
 
             const [formData, setFormData] = useState({
-                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '', businessNumber: '',
+                birthYear: '', niceScore: '', guaranteedAmount: '', foundationDate: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '', businessNumber: '', businessType: '개인',
                 benefits: { jobIncrease: false, jobCreation: false, intellectualProperty: false, socialInsurance: false, lowIncome: false, socialCare: false, smallBusiness: false, revenueDecrease: false },
                 scores: Array(11).fill(0)
             });
@@ -642,6 +642,7 @@
                         annualSales: formData.annualSales,
                         revenueStatus: formData.revenueStatus,
                         modelName: modelName || '',
+                        businessType: formData.businessType,
                         surveyData: surveyJson,
                         reportData: reportText
                     };
@@ -978,7 +979,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
 
 
 [상담 데이터]
-- 업종: ${formData.sector} / 설립일: ${formData.foundationDate}
+- 업종: ${formData.sector} / 설립일: ${formData.foundationDate} / 사업자구분: ${formData.businessType}
 - NICE: ${formData.niceScore}점 / 기보증: ${formData.guaranteedAmount}만원 / 최근1년 신고매출액: ${formData.annualSales || '미입력'}만원 / 매출추이: ${formData.revenueStatus}
 - 우대사항: ${activeBenefits}
 - 자가진단 니즈 점수(11개 항목): ${JSON.stringify(formData.scores)}
@@ -1134,11 +1135,12 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
 
                         {/* [수정] 칭찬해주신 '기본정보 요약 그리드' 적용 */}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-center">
-                                기본정보 요약
+                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-baseline gap-2">
+                                <span>기본정보 요약</span>
+                                <span className="text-xs font-bold lowercase text-slate-400">(업체번호 : {formData.businessNumber || "-"})</span>
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
-                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">업체번호</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.businessNumber || "-"}</span></div>
+                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">사업자구분</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.businessType || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">출생년도</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.birthYear || "-"}년</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">NICE 점수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.niceScore || "0"}점</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">기보증금액</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.guaranteedAmount || "0"}만원</span></div>
@@ -1292,7 +1294,7 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                         </div>
                     )}
 
-                    <div className="max-w-5xl mx-auto bg-white shadow-2xl border border-slate-200 overflow-hidden print-container rounded-sm">
+                    <div className="max-w-5xl mx-auto bg-white shadow-2xl ring-1 ring-slate-400 print-container rounded-sm">
                         <div className="p-10 border-b border-slate-100 bg-white relative">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -1313,27 +1315,38 @@ ${!formData.benefits.socialInsurance ? `  - **[필수 추가 사항]**: 현재 �
                                     <div className="w-1.5 h-6 bg-[#0055A5]"></div>
                                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center">
                                         1. 기본정보
-                                        <span className="text-lg text-slate-400 ml-1 font-extrabold flex items-center">
-                                            (
-                                            <input
-                                                type="text"
-                                                placeholder="업체번호"
-                                                className="w-[4.8rem] bg-transparent border-b-2 border-slate-300 focus:border-[#0055A5] outline-none text-lg font-bold text-[#0055A5] placeholder:text-slate-300 text-center mx-1 print:border-none print:p-0"
-                                                value={formData.businessNumber || ''}
-                                                maxLength={7}
-                                                onChange={(e) => {
-                                                    const val = e.target.value.replace(/[^0-9]/g, '');
-                                                    setFormData({ ...formData, businessNumber: val });
-                                                }}
-                                            />
-                                            )
-                                        </span>
                                     </h2>
                                 </div>
-                                <div className="info-grid grid grid-cols-1 md:grid-cols-3 gap-y-5 gap-x-8">
+                                <div className="info-grid grid grid-cols-1 md:grid-cols-4 gap-y-5 gap-x-8">
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-black text-slate-500 ml-1">업체번호</label>
+                                        <input
+                                            type="text"
+                                            placeholder="업체번호"
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold focus:border-[#0055A5]"
+                                            value={formData.businessNumber || ''}
+                                            maxLength={7}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                                setFormData({ ...formData, businessNumber: val });
+                                            }}
+                                        />
+                                    </div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">출생년도</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.birthYear} onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}><option value="">년도 선택</option>{years.map(y => <option key={y} value={y}>{y}년</option>)}</select></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" placeholder="점수 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.niceScore} onChange={(e) => setFormData({ ...formData, niceScore: e.target.value })} /></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" placeholder="금액 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.guaranteedAmount} onChange={(e) => setFormData({ ...formData, guaranteedAmount: e.target.value })} /></div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-black text-slate-500 ml-1">사업자구분</label>
+                                        <select
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"
+                                            value={formData.businessType}
+                                            onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                                        >
+                                            <option value="개인">개인</option>
+                                            <option value="법인">법인</option>
+                                        </select>
+                                    </div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.foundationDate} onChange={(e) => setFormData({ ...formData, foundationDate: e.target.value })} /></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" placeholder="업종 입력" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value })} /></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" placeholder="인원 수" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.employeeCount} onChange={(e) => setFormData({ ...formData, employeeCount: e.target.value })} /></div>
