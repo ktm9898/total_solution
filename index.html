@@ -892,15 +892,21 @@
                     const sales = parseInt(formData.annualSales || 0);
 
                     // 1. 종업원 수준 판정
-                    let limit = 5;
+                    let empLimit = 5;
                     if (sector.includes('제조') || sector.includes('건설') || sector.includes('운수') || sector.includes('광업')) {
-                        limit = 10;
+                        empLimit = 10;
                     }
-                    const isEmployeePass = employees < limit;
+                    if (employees >= empLimit) return false;
 
-                    // 2. 매출액 기준 (간이 판정 - 업종별 10~120억 기준 고려)
-                    // 정확한 세부 매칭은 AI에게 맡기되, 인원수에서 이미 탈락하면 확정적 비소상공인으로 간주
-                    return isEmployeePass;
+                    // 2. 소기업 매출액 기준 (평균 매출액 10억~120억 수준)
+                    let salesLimit = 1200000; // 120억 (기본값)
+                    if (sector.includes('숙박') || sector.includes('음식')) salesLimit = 300000; // 30억
+                    else if (sector.includes('도매') || sector.includes('소매') || sector.includes('건설') || sector.includes('운수')) salesLimit = 500000; // 50억
+                    else if (sector.includes('부동산') || sector.includes('교육') || sector.includes('보건') || sector.includes('수리')) salesLimit = 100000; // 10억
+
+                    if (sales > salesLimit) return false;
+
+                    return true;
                 })();
 
 
@@ -950,6 +956,10 @@ ${knowledgeText}
    - **성장기반자금** 등 고정금리 상품: 이차보전 상품이 아니며, **상품 설명에 명시된 고정금리(예: 3.0% 등)**를 그대로 적용하여 비교하십시오.
    - **최종 비교**: 산출된 예상 금리가 가장 낮은 상품을 우선 추천하되, 한도 및 보증료율을 종합적으로 고려하십시오.
 5. **기보증금액과 상품 한도 비교 (필수)**: 각 상품의 '최대 지원 한도'를 지식 DB에서 확인하세요. 만약 사장님의 **기보증금액**이 해당 상품의 한도보다 크거나 같다면, 추가 지원이 불가능하므로 **절대 추천하지 마세요.** (예: 기보증 4,000만원 보유자는 한도 3,000만원인 '소액 스피드 보증' 대상이 아님)
+6. **장기 업력 사업 필터링 (정밀 검증 - 중요)**: 아래 사업은 업종별로 다른 업력 기준을 가집니다. 계산된 업력과 대조하여 기준 미달 시 절대 언급하지 마세요.
+   - **백년소공인 (제조업)**: 설립일 대비 업력이 최소 **15년 이상**일 때만 추천 가능.
+   - **백년가게 (음식점, 도소매 등 제조업 외)**: 설립일 대비 업력이 최소 **30년 이상**일 때만 추천 가능.
+   - **가업승계 관련**: 최소 10년 이상의 업력이 확인되어야 합니다.
 
 [필수 금지 사항]
 1. 리포트 제목, 인사말, 날짜, 서명 등 불필요한 서두와 결미를 생략하고 바로 본론으로 들어갑니다.
