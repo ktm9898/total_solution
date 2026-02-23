@@ -544,11 +544,11 @@
                             <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{record.businessType || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{record.birthYear || '-'}년</span></div>
                             <div><span className="text-xs text-slate-500 block">NICE CB점수</span><span className="text-sm font-black text-slate-800">{record.niceScore || '0'}점</span></div>
-                            <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '0'}만원</span></div>
+                            <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '0'}백만원</span></div>
                             <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{record.foundationDate || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{record.sector || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{record.employeeCount || '0'}명</span></div>
-                            <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{record.annualSales || '-'}만원 ({record.revenueStatus || '-'})</span></div>
+                            <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{record.annualSales || '-'}백만원 ({record.revenueStatus || '-'})</span></div>
                         </div>
                     </div>
 
@@ -723,11 +723,13 @@
             // 세션 스토리지에서 암호 가져오기
             const getStoredPw = () => sessionStorage.getItem('admin_pw') || '';
 
-            // 필터
+            // 필터 입력 상태
             const [dateFrom, setDateFrom] = useState('');
             const [dateTo, setDateTo] = useState('');
             const [searchBiz, setSearchBiz] = useState('');
-            const [searchSector, setSearchSector] = useState('');
+
+            // 적용된 필터 상태
+            const [filter, setFilter] = useState({ dateFrom: '', dateTo: '', searchBiz: '' });
 
             // 모달
             const [surveyModal, setSurveyModal] = useState(null);
@@ -770,16 +772,15 @@
                 }
             }, [isAuthenticated]);
 
-            // 필터링
+            // 필터링 적용
             const filteredRecords = useMemo(() => {
                 return records.filter(r => {
-                    if (dateFrom && r.consultDate < dateFrom) return false;
-                    if (dateTo && r.consultDate > dateTo) return false;
-                    if (searchBiz && !r.businessNumber.includes(searchBiz)) return false;
-                    if (searchSector && !r.sector.includes(searchSector)) return false;
+                    if (filter.dateFrom && r.consultDate < filter.dateFrom) return false;
+                    if (filter.dateTo && r.consultDate > filter.dateTo) return false;
+                    if (filter.searchBiz && !r.businessNumber.includes(filter.searchBiz)) return false;
                     return true;
                 });
-            }, [records, dateFrom, dateTo, searchBiz, searchSector]);
+            }, [records, filter]);
 
             // 통계
             const stats = useMemo(() => {
@@ -868,11 +869,11 @@
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">사업자구분</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessType || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">출생년도</span><span class="text-sm font-black text-slate-800 report-info-value">${record.birthYear || '-'}년</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">NICE 점수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.niceScore || '0'}점</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '0'}만원</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '0'}백만원</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">설립일자</span><span class="text-sm font-black text-slate-800 report-info-value">${record.foundationDate || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업종</span><span class="text-sm font-black text-slate-800 report-info-value">${record.sector || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">종업원수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.employeeCount || '0'}명</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">매출현황</span><span class="text-sm font-black text-slate-800 report-info-value">${record.annualSales || '-'}만원(${record.revenueStatus || '-'})</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">매출현황</span><span class="text-sm font-black text-slate-800 report-info-value">${record.annualSales || '-'}백만원(${record.revenueStatus || '-'})</span></div>
                             </div>
                         </div>
                         <div class="space-y-4 text-slate-700 leading-relaxed text-sm md:text-base">${formattedLines}</div>
@@ -968,7 +969,7 @@
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업체번호</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.businessNumber || ''}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.niceScore || '0'}" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (만원)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '0'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (백만원)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '0'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">사업자구분</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessType || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.foundationDate || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.sector || '-'}" /></div>
@@ -979,7 +980,7 @@
                                         <span class="text-sm font-black text-slate-500 uppercase tracking-tighter">매출현황 :</span>
                                         <div class="flex items-center gap-2">
                                             <input type="number" readonly class="w-40 p-2.5 bg-white border border-slate-200 rounded-sm outline-none text-base font-bold text-right" value="${record.annualSales || ''}" />
-                                            <span class="text-xs font-bold text-slate-500">만원/년</span>
+                                            <span class="text-xs font-bold text-slate-500">백만원/년</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-5">
@@ -1103,16 +1104,16 @@
                                     <label className="text-xs font-bold text-slate-500">업체번호</label>
                                     <input type="text" placeholder="검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchBiz} onChange={e => setSearchBiz(e.target.value)} />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-500">업종</label>
-                                    <input type="text" placeholder="검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchSector} onChange={e => setSearchSector(e.target.value)} />
-                                </div>
                                 <div className="flex gap-2 ml-auto">
-                                    <button onClick={() => { setDateFrom(''); setDateTo(''); setSearchBiz(''); setSearchSector(''); }}
+                                    <button onClick={() => { setFilter({ dateFrom, dateTo, searchBiz }); }}
+                                        className="px-4 py-2 text-sm font-bold text-white bg-slate-800 rounded-lg hover:bg-slate-900 transition-colors flex items-center gap-1 shadow-md">
+                                        <Icon name="search" size={14} /> 조회
+                                    </button>
+                                    <button onClick={() => { setDateFrom(''); setDateTo(''); setSearchBiz(''); setFilter({ dateFrom: '', dateTo: '', searchBiz: '' }); }}
                                         className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-1">
                                         <Icon name="rotate-ccw" size={14} /> 초기화
                                     </button>
-                                    <button onClick={loadData}
+                                    <button onClick={() => loadData()}
                                         className="px-4 py-2 text-sm font-bold text-white bg-[#0055A5] rounded-lg hover:bg-[#004488] transition-colors flex items-center gap-1">
                                         <Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} /> 새로고침
                                     </button>
@@ -1173,7 +1174,7 @@
                                                     <td className="px-2 py-3 text-center font-black text-[#0055A5] whitespace-nowrap">{r.businessNumber || '-'}</td>
                                                     <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.birthYear || '-'}</td>
                                                     <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.niceScore || '-'}</td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount ? `${r.guaranteedAmount}만` : '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount ? `${r.guaranteedAmount}백만` : '-'}</td>
                                                     <td className="px-2 py-3 text-center text-xs font-bold text-slate-500 whitespace-nowrap">
                                                         {r.businessType === '법인' ?
                                                             <span className="bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100 whitespace-nowrap">법인</span> :
@@ -1187,7 +1188,7 @@
                                                         </div>
                                                     </td>
                                                     <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.employeeCount || '-'}</td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.annualSales ? `${r.annualSales}만` : '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.annualSales ? `${r.annualSales}백만` : '-'}</td>
                                                     <td className="px-2 py-3 text-center whitespace-nowrap">
                                                         {r.revenueStatus && (
                                                             <span className={`text-xs px-2 py-1 rounded-full font-bold whitespace-nowrap ${r.revenueStatus.includes('증가') ? 'bg-emerald-50 text-emerald-600' :
@@ -1258,11 +1259,11 @@
                                         <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{reportModal.businessType || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{reportModal.birthYear || '-'}년</span></div>
                                         <div><span className="text-xs text-slate-500 block">NICE 점수</span><span className="text-sm font-black text-slate-800">{reportModal.niceScore || '0'}점</span></div>
-                                        <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '0'}만원</span></div>
+                                        <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '0'}백만원</span></div>
                                         <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{reportModal.foundationDate || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{reportModal.sector || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{reportModal.employeeCount || '0'}명</span></div>
-                                        <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{reportModal.annualSales || '-'}만원({reportModal.revenueStatus || '-'})</span></div>
+                                        <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{reportModal.annualSales || '-'}백만원({reportModal.revenueStatus || '-'})</span></div>
                                     </div>
                                 </div>
                                 {/* AI 리포트 본문 */}
