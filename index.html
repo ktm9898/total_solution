@@ -1047,7 +1047,7 @@
                                     </div>
 
                                     {/* AI 진단 시작 버튼 */}
-                                    <button onClick={runRealAIAnalysis} disabled={isAnalyzing} className={`w-full py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${isAnalyzing ? 'bg-slate-300 text-slate-500' : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white active:scale-[0.98]'}`}>
+                                    <button onClick={runRealAIAnalysis} disabled={isAnalyzing} className={`w-full py-4 rounded-2xl font-black shadow-xl transition-all flex items-center justify-center gap-2 ${isAnalyzing ? 'bg-slate-300 text-slate-500 text-sm' : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-lg active:scale-[0.98]'}`}>
                                         <Icon name={isAnalyzing ? "loader-2" : "sparkles"} size={22} className={isAnalyzing ? "animate-spin" : ""} />
                                         {isAnalyzing ? analysisStatus : 'AI 진단 시작'}
                                     </button>
@@ -1600,7 +1600,7 @@ ${!formData.benefits.socialInsurance && isMicroEnterprise ? `  - **[필수 추�
 
             const ReportView = () => (
                 <div className="max-w-4xl mx-auto my-8 print:m-0 print:p-0 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div className="bg-white p-12 print:p-0 shadow-xl border border-slate-200 rounded-sm print-container report-view">
+                    <div className="bg-white p-4 md:p-12 print:p-0 shadow-xl border border-slate-200 rounded-sm print-container report-view">
                         <div className="border-b-4 border-slate-900 pb-4 mb-6">
                             <h1 className="text-3xl font-black text-slate-900 tracking-tight">소상공인 종합지원 AI 진단 리포트</h1>
                             <p className="text-sm text-slate-500 font-bold mt-2">AI-Powered Analysis by Seoul Credit Guarantee Foundation</p>
