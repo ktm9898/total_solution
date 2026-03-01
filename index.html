@@ -103,6 +103,59 @@
             padding-bottom: 0.25rem;
         }
 
+        /* ========== 모바일 스무고개 UI 전용 스타일 ========== */
+        .mobile-step-enter {
+            animation: mobileSlideIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        @keyframes mobileSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .mobile-step-back {
+            animation: mobileSlideBack 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        @keyframes mobileSlideBack {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .mobile-progress-fill {
+            transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        .mobile-score-btn {
+            transition: all 0.15s ease;
+        }
+
+        .mobile-score-btn:active {
+            transform: scale(0.92);
+        }
+
+        .mobile-card {
+            backdrop-filter: blur(10px);
+        }
+
+        .mobile-q-progress {
+            transition: width 0.3s ease;
+        }
+
         /* [중요] 통합버전18의 인쇄 설정 100% 원복 (입력 페이지 인쇄 보존용) */
         @media print {
             @page {
@@ -621,6 +674,408 @@
 
             const handleScoreChange = (index, score) => { const newScores = [...formData.scores]; newScores[index] = score; setFormData({ ...formData, scores: newScores }); };
             const toggleBenefit = (key) => { setFormData({ ...formData, benefits: { ...formData.benefits, [key]: !formData.benefits[key] } }); };
+
+            // ========== 모바일 스무고개 UI 상태 ==========
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+            const [mobileStep, setMobileStep] = useState(0); // 0~4 (5단계)
+            const [mobileQIdx, setMobileQIdx] = useState(0); // Step 2 내 질문 인덱스 (0~10)
+            const [stepDirection, setStepDirection] = useState('forward'); // 애니메이션 방향
+            const [stepKey, setStepKey] = useState(0); // force re-render for animation
+            const [showMobileApiConfig, setShowMobileApiConfig] = useState(false);
+            const [showMobileSheetConfig, setShowMobileSheetConfig] = useState(false);
+
+            useEffect(() => {
+                const handler = () => setIsMobile(window.innerWidth < 768);
+                window.addEventListener('resize', handler);
+                return () => window.removeEventListener('resize', handler);
+            }, []);
+
+            const MOBILE_STEPS = [
+                { title: '기본정보 (1/2)', icon: 'user', desc: '업체번호, 출생년도, NICE점수, 기보증금액' },
+                { title: '기본정보 (2/2)', icon: 'building-2', desc: '사업자구분, 설립일, 업종, 종업원수, 매출' },
+                { title: '사업 운영 진단', icon: 'clipboard-check', desc: '11개 문항에 답변해주세요' },
+                { title: '우대사항 · 애로사항', icon: 'heart-handshake', desc: '우대사항 체크 및 고민 작성' },
+                { title: '입력 확인', icon: 'check-circle', desc: '입력 내용을 확인하고 AI 진단을 시작하세요' },
+            ];
+
+            const goMobileStep = (step, direction = 'forward') => {
+                setStepDirection(direction);
+                setStepKey(k => k + 1);
+                setMobileStep(step);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // 진단문항에서 현재 질문의 카테고리 찾기
+            const getCurrentCategory = (qIdx) => {
+                for (const cat of categories) {
+                    if (qIdx >= cat.startIdx && qIdx < cat.startIdx + cat.count) return cat.name;
+                }
+                return '';
+            };
+
+            // ========== MobileFormView 컴포넌트 ==========
+            const MobileFormView = () => {
+                const progress = ((mobileStep + 1) / MOBILE_STEPS.length) * 100;
+                const currentStepInfo = MOBILE_STEPS[mobileStep];
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 pb-28">
+                        {/* 토스트 */}
+                        {saveToast && <div className={`fixed top-4 left-4 right-4 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-4 py-3 rounded-xl shadow-2xl font-bold text-sm text-center`}>{saveToast.msg}</div>}
+
+                        {/* 앱 타이틀 배너 */}
+                        <div className="bg-gradient-to-r from-[#0055A5] to-blue-600 text-white px-4 py-3">
+                            <p className="text-[10px] font-bold text-blue-200 tracking-wider uppercase">Seoul Credit Guarantee Foundation</p>
+                            <h1 className="text-base font-black leading-tight mt-0.5">소상공인 종합지원을 위한 자가진단</h1>
+                        </div>
+
+                        {/* 상단 헤더 + 프로그레스 */}
+                        <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-slate-200 shadow-sm">
+                            <div className="px-4 pt-3 pb-2">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-[#0055A5] flex items-center justify-center">
+                                            <Icon name={currentStepInfo.icon} size={16} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <h1 className="text-sm font-black text-slate-800 leading-tight">{currentStepInfo.title}</h1>
+                                            <p className="text-[10px] text-slate-400 font-medium">{currentStepInfo.desc}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs font-black text-[#0055A5] bg-blue-50 px-2.5 py-1 rounded-full">
+                                        {mobileStep + 1} / {MOBILE_STEPS.length}
+                                    </span>
+                                </div>
+                                {/* 프로그레스 바 */}
+                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="mobile-progress-fill h-full bg-gradient-to-r from-[#0055A5] to-blue-400 rounded-full" style={{ width: `${progress}%` }}></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 스텝 콘텐츠 */}
+                        <div key={stepKey} className={`px-4 pt-5 ${stepDirection === 'forward' ? 'mobile-step-enter' : 'mobile-step-back'}`}>
+
+                            {/* ===== Step 0: 기본정보 상단 ===== */}
+                            {mobileStep === 0 && (
+                                <div className="space-y-4">
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">업체번호</label>
+                                                <input type="text" placeholder="업체번호 입력" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] focus:ring-2 focus:ring-blue-100 outline-none transition-all" value={formData.businessNumber || ''} maxLength={7} onChange={(e) => { const val = e.target.value.replace(/[^0-9]/g, ''); setFormData({ ...formData, businessNumber: val }); }} />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">출생년도</label>
+                                                <select className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.birthYear} onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}><option value="">년도 선택</option>{years.map(y => <option key={y} value={y}>{y}년</option>)}</select>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">NICE CB점수</label>
+                                                <input type="number" placeholder="점수 입력" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] focus:ring-2 focus:ring-blue-100 outline-none transition-all" value={formData.niceScore} onChange={(e) => setFormData({ ...formData, niceScore: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">기보증금액 (백만원)</label>
+                                                <input type="number" placeholder="금액 입력" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] focus:ring-2 focus:ring-blue-100 outline-none transition-all" value={formData.guaranteedAmount} onChange={(e) => setFormData({ ...formData, guaranteedAmount: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== Step 1: 기본정보 하단 + 매출 ===== */}
+                            {mobileStep === 1 && (
+                                <div className="space-y-4">
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">사업자구분</label>
+                                                <select className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.businessType} onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}><option value="개인">개인</option><option value="법인">법인</option></select>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">설립일자</label>
+                                                <input type="date" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.foundationDate} onChange={(e) => setFormData({ ...formData, foundationDate: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">업종</label>
+                                                <input type="text" placeholder="업종 입력" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] focus:ring-2 focus:ring-blue-100 outline-none transition-all" value={formData.sector} onChange={(e) => setFormData({ ...formData, sector: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">종업원수 (명)</label>
+                                                <input type="number" placeholder="인원 수" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] focus:ring-2 focus:ring-blue-100 outline-none transition-all" value={formData.employeeCount} onChange={(e) => setFormData({ ...formData, employeeCount: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* 매출현황 카드 */}
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-xs font-black text-[#0055A5] uppercase tracking-wider mb-3">매출현황</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2">
+                                                <input type="number" placeholder="신고매출액" className="flex-1 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none text-right" value={formData.annualSales} onChange={(e) => setFormData({ ...formData, annualSales: e.target.value })} />
+                                                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">백만원/년</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map((opt) => (
+                                                    <label key={opt} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${formData.revenueStatus === opt ? 'bg-blue-50 border-[#0055A5] shadow-sm' : 'bg-slate-50 border-slate-200'}`}>
+                                                        <input type="radio" name="m_revenue" className="w-4 h-4 accent-[#0055A5]" checked={formData.revenueStatus === opt} onChange={() => setFormData({ ...formData, revenueStatus: opt })} />
+                                                        <span className={`text-sm font-bold ${formData.revenueStatus === opt ? 'text-[#0055A5]' : 'text-slate-600'}`}>{opt}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== Step 2: 진단문항 (스무고개) ===== */}
+                            {mobileStep === 2 && (
+                                <div className="space-y-4">
+                                    {/* 질문 진행 바 */}
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="mobile-q-progress h-full bg-gradient-to-r from-[#0055A5] to-emerald-400 rounded-full" style={{ width: `${((mobileQIdx + 1) / questions.length) * 100}%` }}></div>
+                                        </div>
+                                        <span className="text-xs font-black text-slate-400">{mobileQIdx + 1}/{questions.length}</span>
+                                    </div>
+
+                                    {/* 카테고리 뱃지 */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-black text-white bg-[#0055A5] px-3 py-1 rounded-full">{getCurrentCategory(mobileQIdx)}</span>
+                                    </div>
+
+                                    {/* 질문 카드 */}
+                                    <div className="mobile-card bg-white rounded-2xl p-6 shadow-lg border border-slate-100 min-h-[200px] flex flex-col justify-between">
+                                        <div>
+                                            <p className="text-lg font-black text-slate-800 leading-relaxed mb-6">{questions[mobileQIdx]}</p>
+                                        </div>
+
+                                        {/* 점수 버튼 */}
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {[{ score: 1, label: '전혀 아니다' }, { score: 2, label: '아니다' }, { score: 3, label: '그렇다' }, { score: 4, label: '매우 그렇다' }].map(({ score, label }) => (
+                                                <button
+                                                    key={score}
+                                                    onClick={() => {
+                                                        handleScoreChange(mobileQIdx, score);
+                                                        // 자동 다음 질문
+                                                        if (mobileQIdx < questions.length - 1) {
+                                                            setTimeout(() => {
+                                                                setStepDirection('forward');
+                                                                setStepKey(k => k + 1);
+                                                                setMobileQIdx(mobileQIdx + 1);
+                                                            }, 300);
+                                                        } else {
+                                                            // 마지막 질문 → 다음 스텝
+                                                            setTimeout(() => goMobileStep(3, 'forward'), 400);
+                                                        }
+                                                    }}
+                                                    className={`mobile-score-btn py-3 px-1 rounded-xl text-xs font-black border-2 leading-tight ${formData.scores[mobileQIdx] === score
+                                                        ? 'bg-[#0055A5] border-[#0055A5] text-white shadow-lg shadow-blue-200'
+                                                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 질문 네비게이션 */}
+                                    <div className="flex justify-between items-center pt-2">
+                                        <button onClick={() => { if (mobileQIdx > 0) { setStepDirection('back'); setStepKey(k => k + 1); setMobileQIdx(mobileQIdx - 1); } else { goMobileStep(1, 'back'); } }} className="flex items-center gap-1 text-sm font-bold text-slate-400">
+                                            <Icon name="chevron-left" size={16} /> 이전
+                                        </button>
+                                        {/* 답변 현황 도트 */}
+                                        <div className="flex gap-1">
+                                            {questions.map((_, i) => (
+                                                <div key={i} onClick={() => { setStepDirection(i > mobileQIdx ? 'forward' : 'back'); setStepKey(k => k + 1); setMobileQIdx(i); }} className={`w-2 h-2 rounded-full cursor-pointer transition-all ${i === mobileQIdx ? 'bg-[#0055A5] scale-125' : formData.scores[i] > 0 ? 'bg-emerald-400' : 'bg-slate-200'}`}></div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => { if (mobileQIdx < questions.length - 1) { setStepDirection('forward'); setStepKey(k => k + 1); setMobileQIdx(mobileQIdx + 1); } else { goMobileStep(3, 'forward'); } }} className="flex items-center gap-1 text-sm font-bold text-[#0055A5]">
+                                            {mobileQIdx < questions.length - 1 ? '다음' : '완료'} <Icon name="chevron-right" size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== Step 3: 우대사항 + 애로사항 ===== */}
+                            {mobileStep === 3 && (
+                                <div className="space-y-4">
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#0055A5] rounded"></div> 우대사항 체크
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {benefitOptions.map(item => (
+                                                <label key={item.key} className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${formData.benefits[item.key] ? 'bg-blue-50 border-[#0055A5]' : 'bg-slate-50 border-slate-200'}`}>
+                                                    <input type="checkbox" className="mt-0.5 w-5 h-5 accent-[#0055A5] flex-shrink-0" checked={formData.benefits[item.key]} onChange={() => toggleBenefit(item.key)} />
+                                                    <span className={`text-sm font-bold leading-snug ${formData.benefits[item.key] ? 'text-[#0055A5]' : 'text-slate-600'}`}>{item.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#0055A5] rounded"></div> 기타 애로사항
+                                        </h3>
+                                        <textarea className="w-full h-36 p-4 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:ring-2 focus:ring-blue-100 focus:border-[#0055A5] outline-none resize-none font-medium leading-relaxed placeholder:text-slate-300" placeholder="구체적인 고민이나 지원이 시급한 내용을 자유롭게 기록하세요." value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ===== Step 4: 입력 확인 + AI 진단 ===== */}
+                            {mobileStep === 4 && (
+                                <div className="space-y-4">
+                                    {/* 기본정보 요약 */}
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#0055A5] rounded"></div> 기본정보 요약
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                ['업체번호', formData.businessNumber || '-'],
+                                                ['출생년도', formData.birthYear ? `${formData.birthYear}년` : '-'],
+                                                ['NICE점수', formData.niceScore ? `${formData.niceScore}점` : '-'],
+                                                ['기보증금액', formData.guaranteedAmount ? `${formData.guaranteedAmount}백만원` : '-'],
+                                                ['사업자구분', formData.businessType || '-'],
+                                                ['설립일자', formData.foundationDate || '-'],
+                                                ['업종', formData.sector || '-'],
+                                                ['종업원수', formData.employeeCount ? `${formData.employeeCount}명` : '-'],
+                                                ['신고매출액', formData.annualSales ? `${formData.annualSales}백만원` : '-'],
+                                                ['매출추이', formData.revenueStatus || '-'],
+                                            ].map(([label, value]) => (
+                                                <div key={label} className="bg-slate-50 rounded-lg p-2.5">
+                                                    <p className="text-[10px] text-slate-400 font-bold">{label}</p>
+                                                    <p className="text-sm font-black text-slate-800 truncate">{value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 진단 점수 요약 */}
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#0055A5] rounded"></div> 진단 점수
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {categories.map(cat => (
+                                                <div key={cat.name} className="bg-slate-50 rounded-lg p-3">
+                                                    <p className="text-xs font-black text-[#0055A5] mb-1">{cat.name}</p>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {questions.slice(cat.startIdx, cat.startIdx + cat.count).map((q, i) => (
+                                                            <span key={i} className={`text-xs font-bold px-2 py-1 rounded-md ${formData.scores[cat.startIdx + i] > 0 ? 'bg-[#0055A5] text-white' : 'bg-slate-200 text-slate-400'}`}>
+                                                                Q{cat.startIdx + i + 1}: {formData.scores[cat.startIdx + i] || '-'}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 우대사항 요약 */}
+                                    <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-800 mb-3 flex items-center gap-2">
+                                            <div className="w-1 h-5 bg-[#0055A5] rounded"></div> 우대사항 · 애로사항
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {Object.keys(formData.benefits).filter(k => formData.benefits[k]).length > 0 ? (
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {benefitOptions.filter(b => formData.benefits[b.key]).map(b => (
+                                                        <span key={b.key} className="text-xs font-bold text-[#0055A5] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">{b.label.split('(')[0].trim()}</span>
+                                                    ))}
+                                                </div>
+                                            ) : <p className="text-xs text-slate-400 italic">선택된 우대사항 없음</p>}
+                                            {formData.notes ? <div className="mt-2 p-3 bg-amber-50 rounded-lg border border-amber-200"><p className="text-xs text-slate-600 leading-relaxed">{formData.notes}</p></div> : <p className="text-xs text-slate-400 italic mt-1">애로사항 미입력</p>}
+                                        </div>
+                                    </div>
+
+                                    {/* API 설정 (토글) */}
+                                    <div className="mobile-card bg-slate-800 rounded-2xl shadow-lg overflow-hidden">
+                                        <button onClick={() => setShowMobileApiConfig(!showMobileApiConfig)} className="w-full flex items-center justify-between px-5 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <Icon name="shield-check" size={14} className="text-emerald-400" />
+                                                <span className="text-xs font-black text-white">AI 설정</span>
+                                                {(apiKey || groqApiKey) && <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>}
+                                            </div>
+                                            <Icon name={showMobileApiConfig ? 'chevron-up' : 'chevron-down'} size={16} className="text-slate-400" />
+                                        </button>
+                                        {showMobileApiConfig && (
+                                            <div className="px-5 pb-4 space-y-3 border-t border-slate-700 pt-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-blue-300">Google API Key</label>
+                                                    <input type="password" placeholder="Google API Key" className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white focus:border-blue-400 outline-none" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-orange-300">Groq API Key</label>
+                                                    <input type="password" placeholder="Groq API Key" className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white focus:border-orange-400 outline-none" value={groqApiKey} onChange={(e) => setGroqApiKey(e.target.value)} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-emerald-300">분석 모델</label>
+                                                    <select className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 outline-none" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+                                                        <option value="gemini-3-flash">🟦 Gemini 3.0 Flash Preview</option>
+                                                        <option value="gemini-2.5-flash">🟦 Gemini 2.5 Flash</option>
+                                                        <option value="groq">🟧 Groq Compound</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 지식 DB 설정 (토글) */}
+                                    <div className="mobile-card bg-slate-800 rounded-2xl shadow-lg overflow-hidden">
+                                        <button onClick={() => setShowMobileSheetConfig(!showMobileSheetConfig)} className="w-full flex items-center justify-between px-5 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <Icon name="database" size={14} className="text-amber-400" />
+                                                <span className="text-xs font-black text-white">지식 DB 설정</span>
+                                                {(sheetStatus.comprehensive || sheetStatus.reference) && <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">ON</span>}
+                                                {(sheetConfig.comprehensiveSheetId || sheetConfig.referenceSheetId) && !(sheetStatus.comprehensive || sheetStatus.reference) && <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">미검증</span>}
+                                            </div>
+                                            <Icon name={showMobileSheetConfig ? 'chevron-up' : 'chevron-down'} size={16} className="text-slate-400" />
+                                        </button>
+                                        {showMobileSheetConfig && (
+                                            <div className="px-5 pb-4 space-y-3 border-t border-slate-700 pt-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-amber-300">종합지원 시트 ID</label>
+                                                    <input type="text" placeholder="Google Sheets ID 입력" className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white focus:border-amber-400 outline-none" value={sheetConfig.comprehensiveSheetId} onChange={(e) => setSheetConfig({ ...sheetConfig, comprehensiveSheetId: e.target.value })} />
+                                                    <p className="text-[9px] text-slate-500">Sheet1: 특별보증 | Sheet2: 정책자금 | Sheet3: 경영지원</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] font-bold text-emerald-300">참고자료 시트 ID</label>
+                                                    <input type="text" placeholder="Google Sheets ID 입력" className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white focus:border-emerald-400 outline-none" value={sheetConfig.referenceSheetId} onChange={(e) => setSheetConfig({ ...sheetConfig, referenceSheetId: e.target.value })} />
+                                                    <p className="text-[9px] text-slate-500">Sheet1: 경기동향·통계 | Sheet2: 경제지표</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* AI 진단 시작 버튼 */}
+                                    <button onClick={runRealAIAnalysis} disabled={isAnalyzing} className={`w-full py-5 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 ${isAnalyzing ? 'bg-slate-300 text-slate-500' : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white active:scale-[0.98]'}`}>
+                                        <Icon name={isAnalyzing ? "loader-2" : "sparkles"} size={22} className={isAnalyzing ? "animate-spin" : ""} />
+                                        {isAnalyzing ? analysisStatus : 'AI 진단 시작'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 하단 네비게이션 (Step 2 제외 - 자체 네비 있음) */}
+                        {mobileStep !== 2 && (
+                            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                                <div className="flex gap-3">
+                                    {mobileStep > 0 && (
+                                        <button onClick={() => { if (mobileStep === 2) { setMobileQIdx(questions.length - 1); } goMobileStep(mobileStep - 1, 'back'); }} className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 text-slate-500 font-black text-sm flex items-center justify-center gap-2">
+                                            <Icon name="chevron-left" size={16} /> 이전
+                                        </button>
+                                    )}
+                                    {mobileStep < MOBILE_STEPS.length - 1 && (
+                                        <button onClick={() => { if (mobileStep + 1 === 2) { setMobileQIdx(0); } goMobileStep(mobileStep + 1, 'forward'); }} className="flex-1 py-3.5 rounded-xl bg-[#0055A5] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg">
+                                            다음 <Icon name="chevron-right" size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
 
             // ── 상담 데이터 Google Sheets 저장 ──
             const saveToSheet = async (reportText, modelName) => {
@@ -1200,6 +1655,10 @@ ${!formData.benefits.socialInsurance && isMicroEnterprise ? `  - **[필수 추�
 
             if (viewMode === 'report') return <div className="min-h-screen py-8 px-4 bg-slate-100 print:p-0 print:m-0 print:bg-white">{saveToast && <div className={`fixed top-6 right-6 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm`} style={{ animation: 'slideIn 0.4s ease' }}>{saveToast.msg}</div>}<ReportView /></div>;
 
+            // ========== 모바일 폼 뷰 ==========
+            if (isMobile) return <MobileFormView />;
+
+            // ========== PC 폼 뷰 (기존 코드 100% 유지) ==========
             return (
                 <div className="min-h-screen py-8 px-4 relative">
                     {saveToast && <div className={`fixed top-6 right-6 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm`} style={{ animation: 'slideIn 0.4s ease' }}>{saveToast.msg}</div>}
