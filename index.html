@@ -713,8 +713,8 @@
                 return '';
             };
 
-            // ========== MobileFormView 컴포넌트 ==========
-            const MobileFormView = () => {
+            // ========== 모바일 폼 뷰 JSX (컴포넌트가 아닌 변수로 정의: 포커스 유지) ==========
+            const mobileFormJSX = (() => {
                 const progress = ((mobileStep + 1) / MOBILE_STEPS.length) * 100;
                 const currentStepInfo = MOBILE_STEPS[mobileStep];
 
@@ -809,9 +809,8 @@
                                     <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
                                         <h3 className="text-xs font-black text-[#0055A5] uppercase tracking-wider mb-3">매출현황</h3>
                                         <div className="space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <input type="number" placeholder="신고매출액" className="flex-1 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none text-right" value={formData.annualSales} onChange={(e) => setFormData({ ...formData, annualSales: e.target.value })} />
-                                                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">백만원/년</span>
+                                            <div>
+                                                <input type="number" placeholder="신고매출액 (백만원/년)" className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.annualSales} onChange={(e) => setFormData({ ...formData, annualSales: e.target.value })} />
                                             </div>
                                             <div className="space-y-2">
                                                 {["지속적인 감소", "감소 후 정체", "현상유지", "증가 후 정체", "지속적인 증가"].map((opt) => (
@@ -850,7 +849,7 @@
 
                                         {/* 점수 버튼 */}
                                         <div className="grid grid-cols-4 gap-2">
-                                            {[{ score: 1, label: '전혀 아니다' }, { score: 2, label: '아니다' }, { score: 3, label: '그렇다' }, { score: 4, label: '매우 그렇다' }].map(({ score, label }) => (
+                                            {[{ score: 1, label: '전혀\n아니다' }, { score: 2, label: '아니다' }, { score: 3, label: '그렇다' }, { score: 4, label: '매우\n그렇다' }].map(({ score, label }) => (
                                                 <button
                                                     key={score}
                                                     onClick={() => {
@@ -867,7 +866,7 @@
                                                             setTimeout(() => goMobileStep(3, 'forward'), 400);
                                                         }
                                                     }}
-                                                    className={`mobile-score-btn py-3 px-1 rounded-xl text-xs font-black border-2 leading-tight ${formData.scores[mobileQIdx] === score
+                                                    className={`mobile-score-btn py-3 px-1 rounded-xl text-xs font-black border-2 whitespace-pre-line leading-tight text-center ${formData.scores[mobileQIdx] === score
                                                         ? 'bg-[#0055A5] border-[#0055A5] text-white shadow-lg shadow-blue-200'
                                                         : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                                                         }`}
@@ -1057,25 +1056,27 @@
                         </div>
 
                         {/* 하단 네비게이션 (Step 2 제외 - 자체 네비 있음) */}
-                        {mobileStep !== 2 && (
-                            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-                                <div className="flex gap-3">
-                                    {mobileStep > 0 && (
-                                        <button onClick={() => { if (mobileStep === 2) { setMobileQIdx(questions.length - 1); } goMobileStep(mobileStep - 1, 'back'); }} className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 text-slate-500 font-black text-sm flex items-center justify-center gap-2">
-                                            <Icon name="chevron-left" size={16} /> 이전
-                                        </button>
-                                    )}
-                                    {mobileStep < MOBILE_STEPS.length - 1 && (
-                                        <button onClick={() => { if (mobileStep + 1 === 2) { setMobileQIdx(0); } goMobileStep(mobileStep + 1, 'forward'); }} className="flex-1 py-3.5 rounded-xl bg-[#0055A5] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg">
-                                            다음 <Icon name="chevron-right" size={16} />
-                                        </button>
-                                    )}
+                        {
+                            mobileStep !== 2 && (
+                                <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-4 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+                                    <div className="flex gap-3">
+                                        {mobileStep > 0 && (
+                                            <button onClick={() => { if (mobileStep === 2) { setMobileQIdx(questions.length - 1); } goMobileStep(mobileStep - 1, 'back'); }} className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 text-slate-500 font-black text-sm flex items-center justify-center gap-2">
+                                                <Icon name="chevron-left" size={16} /> 이전
+                                            </button>
+                                        )}
+                                        {mobileStep < MOBILE_STEPS.length - 1 && (
+                                            <button onClick={() => { if (mobileStep + 1 === 2) { setMobileQIdx(0); } goMobileStep(mobileStep + 1, 'forward'); }} className="flex-1 py-3.5 rounded-xl bg-[#0055A5] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg">
+                                                다음 <Icon name="chevron-right" size={16} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )
+                        }
+                    </div >
                 );
-            };
+            })();
 
             // ── 상담 데이터 Google Sheets 저장 ──
             const saveToSheet = async (reportText, modelName) => {
@@ -1656,7 +1657,7 @@ ${!formData.benefits.socialInsurance && isMicroEnterprise ? `  - **[필수 추�
             if (viewMode === 'report') return <div className="min-h-screen py-8 px-4 bg-slate-100 print:p-0 print:m-0 print:bg-white">{saveToast && <div className={`fixed top-6 right-6 z-[9999] ${saveToast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'} text-white px-5 py-3 rounded-lg shadow-2xl font-bold text-sm`} style={{ animation: 'slideIn 0.4s ease' }}>{saveToast.msg}</div>}<ReportView /></div>;
 
             // ========== 모바일 폼 뷰 ==========
-            if (isMobile) return <MobileFormView />;
+            if (isMobile) return mobileFormJSX;
 
             // ========== PC 폼 뷰 (기존 코드 100% 유지) ==========
             return (
