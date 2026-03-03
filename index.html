@@ -842,7 +842,7 @@
                                     </div>
 
                                     {/* 질문 카드 */}
-                                    <div className="mobile-card bg-white rounded-2xl p-6 shadow-lg border border-slate-100 min-h-[200px] flex flex-col justify-between">
+                                    <div key={mobileQIdx} className="mobile-card bg-white rounded-2xl p-6 shadow-lg border border-slate-100 min-h-[200px] flex flex-col justify-between">
                                         <div>
                                             <p className="text-lg font-black text-slate-800 leading-relaxed mb-6">{questions[mobileQIdx]}</p>
                                         </div>
@@ -857,8 +857,6 @@
                                                         // 자동 다음 질문
                                                         if (mobileQIdx < questions.length - 1) {
                                                             setTimeout(() => {
-                                                                setStepDirection('forward');
-                                                                setStepKey(k => k + 1);
                                                                 setMobileQIdx(mobileQIdx + 1);
                                                             }, 300);
                                                         } else {
@@ -879,7 +877,7 @@
 
                                     {/* 질문 네비게이션 */}
                                     <div className="flex justify-between items-center pt-2">
-                                        <button onClick={() => { if (mobileQIdx > 0) { setStepDirection('back'); setStepKey(k => k + 1); setMobileQIdx(mobileQIdx - 1); } else { goMobileStep(1, 'back'); } }} className="flex items-center gap-1 text-sm font-bold text-slate-400">
+                                        <button onClick={() => { if (mobileQIdx > 0) { setMobileQIdx(mobileQIdx - 1); } else { goMobileStep(1, 'back'); } }} className="flex items-center gap-1 text-sm font-bold text-slate-400">
                                             <Icon name="chevron-left" size={16} /> 이전
                                         </button>
                                         {/* 답변 현황 도트 */}
@@ -888,7 +886,7 @@
                                                 <div key={i} onClick={() => { setStepDirection(i > mobileQIdx ? 'forward' : 'back'); setStepKey(k => k + 1); setMobileQIdx(i); }} className={`w-2 h-2 rounded-full cursor-pointer transition-all ${i === mobileQIdx ? 'bg-[#0055A5] scale-125' : formData.scores[i] > 0 ? 'bg-emerald-400' : 'bg-slate-200'}`}></div>
                                             ))}
                                         </div>
-                                        <button onClick={() => { if (mobileQIdx < questions.length - 1) { setStepDirection('forward'); setStepKey(k => k + 1); setMobileQIdx(mobileQIdx + 1); } else { goMobileStep(3, 'forward'); } }} className="flex items-center gap-1 text-sm font-bold text-[#0055A5]">
+                                        <button onClick={() => { if (mobileQIdx < questions.length - 1) { setMobileQIdx(mobileQIdx + 1); } else { goMobileStep(3, 'forward'); } }} className="flex items-center gap-1 text-sm font-bold text-[#0055A5]">
                                             {mobileQIdx < questions.length - 1 ? '다음' : '완료'} <Icon name="chevron-right" size={16} />
                                         </button>
                                     </div>
