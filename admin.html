@@ -1121,7 +1121,10 @@
                                     </button>
                                     <button onClick={() => loadData()}
                                         className="px-4 py-2 text-sm font-bold text-white bg-[#0055A5] rounded-lg hover:bg-[#004488] transition-colors flex items-center gap-1">
-                                        <Icon name="refresh-cw" size={14} className={loading ? 'animate-spin' : ''} /> 새로고침
+                                        <div className={loading ? 'animate-spin' : ''} style={{ display: 'flex' }}>
+                                            <Icon name="refresh-cw" size={14} />
+                                        </div>
+                                        새로고침
                                     </button>
                                     <button onClick={downloadCSV}
                                         className="px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors flex items-center gap-1">
