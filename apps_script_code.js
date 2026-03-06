@@ -37,101 +37,100 @@ function unauthorizedResponse() {
     return jsonResponse({ success: false, error: 'Unauthorized – 잘못된 API 키입니다.' });
 }
 
-// ── POST: 상담 데이터 저장 ──────────────────────────
+// ── POST: 상담 데이터 저장 및 조회 (보안 패치 됨) ──────────────────────────
 function doPost(e) {
     try {
         const data = JSON.parse(e.postData.contents);
 
-        // ★ API 키 검증
-        if (data.apiKey !== API_SECRET) {
-            return unauthorizedResponse();
+        // [1] 관리자 데이터 조회 요청인 경우 (pw 파라미터가 있는 경우)
+        if (data.pw !== undefined) {
+            // API 키 검증 (admin.html 에서는 'key' 로 전송 중)
+            const key = data.key || '';
+            if (key !== API_SECRET) {
+                return unauthorizedResponse();
+            }
+
+            // 관리자 비밀번호 검증
+            if (data.pw !== ADMIN_PASSWORD) {
+                return jsonResponse({ success: false, error: '잘못된 비밀번호입니다.' });
+            }
+
+            const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+            if (!sheet) {
+                return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
+            }
+
+            const lastRow = sheet.getLastRow();
+            if (lastRow < 2) {
+                return jsonResponse({ success: true, data: [], total: 0 });
+            }
+
+            const range = sheet.getRange(2, 1, lastRow - 1, 14);
+            const values = range.getValues();
+
+            const records = values.map((row, idx) => ({
+                rowIndex: idx + 2,
+                consultDate: row[0] ? formatDate(row[0]) : '',
+                businessNumber: String(row[1]),
+                birthYear: String(row[2]),
+                niceScore: String(row[3]),
+                guaranteedAmount: String(row[4]),
+                businessType: String(row[5]),
+                foundationDate: row[6] ? formatDate(row[6]) : '',
+                sector: String(row[7]),
+                employeeCount: String(row[8]),
+                annualSales: String(row[9]),
+                revenueStatus: String(row[10]),
+                modelName: String(row[11]),
+                surveyData: String(row[12]),
+                reportData: String(row[13])
+            }));
+
+            records.reverse(); // 최신 순 정렬
+            return jsonResponse({ success: true, data: records, total: records.length });
         }
 
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+        // [2] 클라이언트 설문 데이터 저장 요청인 경우
+        else {
+            // API 키 검증 (index.html 에서는 'apiKey' 로 전송 중)
+            if (data.apiKey !== API_SECRET) {
+                return unauthorizedResponse();
+            }
 
-        if (!sheet) {
-            return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
+            const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+            if (!sheet) {
+                return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
+            }
+
+            // 14열 순서대로 행 추가
+            sheet.appendRow([
+                data.consultDate || '',
+                data.businessNumber || '',
+                data.birthYear || '',
+                data.niceScore || '',
+                data.guaranteedAmount || '',
+                data.businessType || '',
+                data.foundationDate || '',
+                data.sector || '',
+                data.employeeCount || '',
+                data.annualSales || '',
+                data.revenueStatus || '',
+                data.modelName || '',
+                data.surveyData || '',
+                data.reportData || ''
+            ]);
+
+            return jsonResponse({ success: true, message: '저장 완료' });
         }
 
-        // 13열 순서대로 행 추가 (apiKey는 저장하지 않음)
-        sheet.appendRow([
-            data.consultDate || '',   // A: 상담일자
-            data.businessNumber || '',   // B: 업체번호
-            data.birthYear || '',   // C: 출생년도
-            data.niceScore || '',   // D: NICE CB점수
-            data.guaranteedAmount || '', // E: 기보증금액
-            data.businessType || '',    // F: 사업자구분 (개인/법인)
-            data.foundationDate || '',   // G: 설립일자
-            data.sector || '',   // H: 업종
-            data.employeeCount || '',   // I: 종업원수
-            data.annualSales || '',   // J: 매출액
-            data.revenueStatus || '',   // K: 매출추이
-            data.modelName || '',      // L: 진단모델 (AI 모델명)
-            data.surveyData || '',   // M: 설문지 (JSON 문자열)
-            data.reportData || ''    // N: 리포트 (텍스트)
-        ]);
-
-        return jsonResponse({ success: true, message: '저장 완료' });
     } catch (err) {
         return jsonResponse({ success: false, error: err.toString() });
     }
 }
 
-// ── GET: 상담 데이터 조회 ───────────────────────────
+// ── GET: 잘못된 접근 차단 처리 ───────────────────────────
 function doGet(e) {
-    try {
-        // ★ API 키 검증 (쿼리 파라미터: ?key=...)
-        const key = (e && e.parameter && e.parameter.key) || '';
-        if (key !== API_SECRET) {
-            return unauthorizedResponse();
-        }
-
-        // ★ 관리자 비밀번호 검증 (쿼리 파라미터: ?pw=...)
-        const pw = (e && e.parameter && e.parameter.pw) || '';
-        if (pw !== ADMIN_PASSWORD) {
-            return jsonResponse({ success: false, error: '잘못된 비밀번호입니다.' });
-        }
-
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-
-        if (!sheet) {
-            return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
-        }
-
-        const lastRow = sheet.getLastRow();
-        if (lastRow < 2) {
-            // 헤더만 있고 데이터 없음
-            return jsonResponse({ success: true, data: [], total: 0 });
-        }
-
-        const range = sheet.getRange(2, 1, lastRow - 1, 14); // 2행부터 마지막 행까지, 14열
-        const values = range.getValues();
-
-        const records = values.map((row, idx) => ({
-            rowIndex: idx + 2,
-            consultDate: row[0] ? formatDate(row[0]) : '',
-            businessNumber: String(row[1]),
-            birthYear: String(row[2]),
-            niceScore: String(row[3]),
-            guaranteedAmount: String(row[4]),
-            businessType: String(row[5]), // F: 사업자구분
-            foundationDate: row[6] ? formatDate(row[6]) : '', // G: 설립일자
-            sector: String(row[7]),
-            employeeCount: String(row[8]),
-            annualSales: String(row[9]),
-            revenueStatus: String(row[10]),
-            modelName: String(row[11]), // L: 진단모델
-            surveyData: String(row[12]), // M: 설문지
-            reportData: String(row[13])  // N: 리포트
-        }));
-
-        // 최신 순으로 정렬
-        records.reverse();
-
-        return jsonResponse({ success: true, data: records, total: records.length });
-    } catch (err) {
-        return jsonResponse({ success: false, error: err.toString() });
-    }
+    return ContentService.createTextOutput("GET 요청은 지원하지 않습니다. (잘못된 접근)");
 }
 
 // ── 유틸리티 ────────────────────────────────────────

@@ -748,7 +748,13 @@
                 }
                 setLoading(true);
                 try {
-                    const resp = await fetch(`${APPS_SCRIPT_URL}?key=${encodeURIComponent(APPS_SCRIPT_KEY)}&pw=${encodeURIComponent(currentPw)}`);
+                    const resp = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            key: APPS_SCRIPT_KEY,
+                            pw: currentPw
+                        })
+                    });
                     const data = await resp.json();
                     if (data.success) {
                         setRecords(data.data || []);
