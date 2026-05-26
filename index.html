@@ -1467,7 +1467,7 @@ ${knowledgeText}
 - **[서식]**: **특별보증 상품명**, **정책자금명**, **경영지원 사업명**, **[금융지원]**, **[경영지원]** 등 핵심 자금 및 지원사업 명칭과 섹션 헤더는 반드시 **볼드체**로 굵게 표시하여 눈에 띄게 해주세요.
 - [금융지원]: 지원 요건을 충족하는 특별보증 중 **가장 유리한 상품 1개**를 선정하여 상세히 설명하세요. 그 외에도 지원 가능한 상품이 있다면 **최대 2개**까지 상품명을 추가로 언급하여 선택지를 제공하세요. 연계 가능한 **정책자금명**도 함께 언급하세요.
 - [경영지원]: 3번 항목에서 도출된 문제를 해결할 수 있는 **경영지원(컨설팅, 교육 등) 사업**을 구체적으로 연결하세요. 여러 개를 추천해도 좋습니다. **자가진단에서 고득점(3~4점)으로 응답한 니즈 항목과 관련된 사업을 우선적으로 매칭**하세요.
-${!formData.benefits.socialInsurance && isMicroEnterprise ? `  - **[필수 추가 사항]**: 현재 사장님은 '사회보험'에 미가입 상태이며, 동시에 '소상공인' 요건을 충족합니다. [경영지원] 내용을 마무리한 후, 반드시 **자영업자 고용보험** 및 **중소기업사업주 산재보험** 가입을 강력히 권유하는 문단을 마지막에 덧붙으세요. 이 제도들은 종업원이 아닌 **사장님(대표자) 본인을 위한 사회안전망**임을 명확히 설명해야 합니다. "정부와 서울시가 최대 5년간 보험료를 폭넓게 지원하여 사실상 자부담 없이 폐업(실업급여)이나 업무상 재해에 대비할 수 있다"는 점을 강조하세요.` : ''}
+${!formData.benefits.socialInsurance && isMicroEnterprise ? `  - **[필수 추가 사항]**: 현재 사장님은 '사회보험'에 미가입 상태이며, 동시에 '소상공인' 요건을 충족합니다. [경영지원] 내용을 마무리한 후, 반드시 **자영업자 고용보험** 및 **중소기업사업주 산재보험** 가입을 강력히 권유하는 문단을 마지막에 덧붙이세요. 이 제도들은 종업원이 아닌 **사장님(대표자) 본인을 위한 사회안전망**임을 명확히 설명해야 합니다. "정부와 서울시가 최대 5년간 보험료를 폭넓게 지원하여 사실상 자부담 없이 폐업(실업급여)이나 업무상 재해에 대비할 수 있다"는 점을 강조하세요.` : ''}
   - **주의**: "2026 중기부 소상공인 지원사업 통합공고"와 같은 포괄적인 공고명은 절대 사업명으로 추천하지 마세요. 해당 공고 내에 포함된 **개별 세부 사업명**(예: **강한 소상공인 성장지원**, **신사업창업사관학교** 등)을 구체적으로 특정하여 안내해야 합니다.
 - 형식 **절대 준수**: "**[금융지원]** 내용이 바로 이어집니다..." 형태로, 헤더 바로 뒤에 공백 하나만 두고 내용을 시작하세요. 절대 줄바꿈하지 마세요. **[경영지원]**도 마찬가지입니다. **[금융지원]** 문단과 **[경영지원]** 문단 사이에는 줄바꿈 해주세요.
 
@@ -1558,29 +1558,21 @@ ${structuredScores}
                             throw new Error(`분석 결과가 비어있습니다. 상세: ${JSON.stringify(data)}`);
                         }
                     } else {
-                        // ========== Google Gemini API (기존 로직) ==========
-                        const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-                        const listData = await listResp.json();
-                        if (listData.error) throw new Error(listData.error.message);
+                        // ========== Google Gemini API (목록 조회 제거하여 1회 호출로 변경) ==========
+                        let modelName = 'models/gemini-3-flash-preview'; // 기본값
+                        let displayModelName = 'gemini-3-flash-preview';
 
-                        const generativeModels = listData.models.filter(m => m.supportedGenerationMethods.includes('generateContent') && !m.name.includes('embedding') && !m.name.includes('aqa'));
-
-                        // [수정] 2.5 모델을 최우선으로 찾고, 없으면 3.0 모델을 선택 (Fallback 제거)
-                        let bestModel;
                         if (selectedModel === 'gemini-2.5-flash') {
-                            bestModel = generativeModels.find(m => m.name.includes('gemini-2.5-flash'));
+                            modelName = 'models/gemini-2.5-flash';
+                            displayModelName = 'gemini-2.5-flash';
                         } else if (selectedModel === 'gemini-3-flash' || selectedModel === 'gemini') {
-                            // gemini-3-flash (기본값)
-                            bestModel = generativeModels.find(m => m.name.includes('gemini-3-flash-preview'));
+                            modelName = 'models/gemini-3-flash-preview';
+                            displayModelName = 'gemini-3-flash-preview';
                         }
 
-                        if (!bestModel) throw new Error(`${selectedModel} 모델을 찾을 수 없습니다. API Key 권한이나 모델 사용 가능 여부를 확인해주세요.`);
-
-                        // UI 표기도 실제 이름을 그대로 사용 (강제 변환 로직 삭제)
-                        let displayModelName = bestModel.name.split('/')[1];
                         setAnalysisStatus(`${displayModelName} 모델이 리포트 작성 중...`);
 
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${bestModel.name}:generateContent?key=${apiKey}`, {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
