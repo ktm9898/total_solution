@@ -979,7 +979,6 @@
                                     <div class="w-1.5 h-6 bg-[#0055A5]"></div>
                                     <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
                                         <span>1. 기본정보</span>
-                                        <span class="text-base text-slate-500">(${record.businessType}사업자)</span>
                                     </h2>
                                 </div>
                                 <div class="info-grid grid grid-cols-1 md:grid-cols-4 gap-y-5 gap-x-8">
@@ -987,6 +986,7 @@
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">연령대</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.ageGroup || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.niceScoreRange || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '-'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">사업자구분</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessType || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업력</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessAge || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.sector || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.employeeCount || '0'}" /></div>
