@@ -5,8 +5,8 @@
  *
  *  [사용법]
  *  1. Google Sheets에서 새 스프레드시트를 생성합니다.
- *  2. 시트 첫 행(A1~M1)에 아래 13개 헤더를 입력합니다:
- *     상담일자 | 연령대 | NICE CB점수 | 기보증금액 | 사업자구분 |
+ *  2. 시트 첫 행(A1~N1)에 아래 14개 헤더를 입력합니다:
+ *     상담일자 | 행정동 | 연령대 | NICE CB점수 | 기보증금액 | 사업자구분 |
  *     업력 | 업종 | 종업원수 | 매출액 | 매출추이 | 진단모델 | 설문지 | 리포트
  *
  *  3. 확장 프로그램 > Apps Script 를 클릭합니다.
@@ -67,24 +67,25 @@ function doPost(e) {
                 return jsonResponse({ success: true, data: [], total: 0 });
             }
 
-            const range = sheet.getRange(2, 1, lastRow - 1, 13);
+            const range = sheet.getRange(2, 1, lastRow - 1, 14);
             const values = range.getValues();
 
             const records = values.map((row, idx) => ({
                 rowIndex: idx + 2,
                 consultDate: row[0] ? formatDate(row[0]) : '',
-                ageGroup: String(row[1]),
-                niceScoreRange: String(row[2]),
-                guaranteedAmount: String(row[3]),
-                businessType: String(row[4]),
-                businessAge: String(row[5]),
-                sector: String(row[6]),
-                employeeCount: String(row[7]),
-                annualSales: String(row[8]),
-                revenueStatus: String(row[9]),
-                modelName: String(row[10]),
-                surveyData: String(row[11]),
-                reportData: String(row[12])
+                district: String(row[1]),
+                ageGroup: String(row[2]),
+                niceScoreRange: String(row[3]),
+                guaranteedAmount: String(row[4]),
+                businessType: String(row[5]),
+                businessAge: String(row[6]),
+                sector: String(row[7]),
+                employeeCount: String(row[8]),
+                annualSales: String(row[9]),
+                revenueStatus: String(row[10]),
+                modelName: String(row[11]),
+                surveyData: String(row[12]),
+                reportData: String(row[13])
             }));
 
             records.reverse(); // 최신 순 정렬
@@ -103,9 +104,10 @@ function doPost(e) {
                 return jsonResponse({ success: false, error: '시트를 찾을 수 없습니다: ' + SHEET_NAME });
             }
 
-            // 13열 순서대로 행 추가
+            // 14열 순서대로 행 추가
             sheet.appendRow([
                 data.consultDate || '',
+                data.district || '',
                 data.ageGroup || '',
                 data.niceScoreRange || '',
                 data.guaranteedAmount || '',
