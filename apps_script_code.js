@@ -27,10 +27,12 @@
 const SHEET_NAME = 'Sheet1'; // 상담 데이터가 저장될 시트 이름
 
 // ★ API 비밀키 (index.html, admin.html 코드에도 동일한 값이 들어 있어야 합니다)
-const API_SECRET = 'Vk9xTm2rWs7pLd4Q';
+// 주의: 깃허브 등 공개된 저장소에 올릴 때는 실제 키를 하드코딩하지 마세요.
+const API_SECRET = PropertiesService.getScriptProperties().getProperty('API_SECRET') || 'YOUR_API_SECRET_HERE';
 
-// ★ 관리자 페이지 접속 비밀번호 (admin.html의 비밀번호가 이 값과 일치해야 합니다)
-const ADMIN_PASSWORD = '2082';
+// ★ 관리자 페이지 접속 비밀번호
+// 주의: 깃허브 등 공개된 저장소에 올릴 때는 실제 비밀번호를 하드코딩하지 마세요.
+const ADMIN_PASSWORD = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || 'YOUR_ADMIN_PASSWORD_HERE';
 
 // ── 인증 헬퍼 ──────────────────────────────────────
 function unauthorizedResponse() {
