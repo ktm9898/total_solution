@@ -546,10 +546,10 @@
                         <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1">기본정보</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{record.businessType || '-'}</span></div>
-                            <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{record.birthYear || '-'}년</span></div>
-                            <div><span className="text-xs text-slate-500 block">NICE CB점수</span><span className="text-sm font-black text-slate-800">{record.niceScore || '0'}점</span></div>
-                            <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '0'}백만원</span></div>
-                            <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{record.foundationDate || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">연령대</span><span className="text-sm font-black text-slate-800">{record.ageGroup || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">NICE CB점수</span><span className="text-sm font-black text-slate-800">{record.niceScoreRange || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{record.guaranteedAmount || '-'}</span></div>
+                            <div><span className="text-xs text-slate-500 block">업력</span><span className="text-sm font-black text-slate-800">{record.businessAge || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{record.sector || '-'}</span></div>
                             <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{record.employeeCount || '0'}명</span></div>
                             <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{record.annualSales || '-'}백만원 ({record.revenueStatus || '-'})</span></div>
@@ -787,7 +787,7 @@
                 return records.filter(r => {
                     if (filter.dateFrom && r.consultDate < filter.dateFrom) return false;
                     if (filter.dateTo && r.consultDate > filter.dateTo) return false;
-                    if (filter.searchBiz && !r.businessNumber.includes(filter.searchBiz)) return false;
+                    if (filter.searchBiz && !(r.sector || '').includes(filter.searchBiz)) return false;
                     return true;
                 });
             }, [records, filter]);
@@ -805,12 +805,12 @@
 
             // CSV 다운로드
             const downloadCSV = () => {
-                const headers = ['상담일자', '업체번호', '출생년도', 'NICE CB점수', '기보증금액', '설립일자', '업종', '종업원수', '매출액', '매출추이'];
+                const headers = ['상담일자', '연령대', 'NICE CB점수', '기보증금액', '업력', '업종', '종업원수', '매출액', '매출추이'];
                 const csvRows = [headers.join(',')];
                 filteredRecords.forEach(r => {
                     csvRows.push([
-                        r.consultDate, r.businessNumber, r.birthYear, r.niceScore,
-                        r.guaranteedAmount, r.foundationDate, r.sector, r.employeeCount,
+                        r.consultDate, r.ageGroup, r.niceScoreRange,
+                        r.guaranteedAmount, r.businessAge, r.sector, r.employeeCount,
                         r.annualSales, r.revenueStatus
                     ].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','));
                 });
@@ -876,14 +876,13 @@
                         <div class="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-baseline gap-2">
                                 <span>기본정보 요약</span>
-                                <span class="text-xs font-bold lowercase text-slate-400 font-normal">(업체번호 : ${record.businessNumber || '-'})</span>
                             </h3>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">사업자구분</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessType || '-'}</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">출생년도</span><span class="text-sm font-black text-slate-800 report-info-value">${record.birthYear || '-'}년</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">NICE 점수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.niceScore || '0'}점</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '0'}백만원</span></div>
-                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">설립일자</span><span class="text-sm font-black text-slate-800 report-info-value">${record.foundationDate || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">연령대</span><span class="text-sm font-black text-slate-800 report-info-value">${record.ageGroup || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">NICE 점수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.niceScoreRange || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">기보증금액</span><span class="text-sm font-black text-slate-800 report-info-value">${record.guaranteedAmount || '-'}</span></div>
+                                <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업력</span><span class="text-sm font-black text-slate-800 report-info-value">${record.businessAge || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">업종</span><span class="text-sm font-black text-slate-800 report-info-value">${record.sector || '-'}</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">종업원수</span><span class="text-sm font-black text-slate-800 report-info-value">${record.employeeCount || '0'}명</span></div>
                                 <div class="report-info-item"><span class="text-xs text-slate-500 block report-info-label">매출현황</span><span class="text-sm font-black text-slate-800 report-info-value">${record.annualSales || '-'}백만원(${record.revenueStatus || '-'})</span></div>
@@ -979,12 +978,11 @@
                                     </h2>
                                 </div>
                                 <div class="info-grid grid grid-cols-1 md:grid-cols-4 gap-y-5 gap-x-8">
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업체번호</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.businessNumber || ''}" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">출생년도</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.birthYear || '-'}년</option></select></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.niceScore || '0'}" /></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액 (백만원)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '0'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">연령대</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.ageGroup || '-'}</option></select></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.niceScoreRange || '-'}</option></select></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">기보증금액</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.guaranteedAmount || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">사업자구분</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessType || '-'}</option></select></div>
-                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">설립일자</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.foundationDate || '-'}" /></div>
+                                    <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업력</label><select disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold"><option>${record.businessAge || '-'}</option></select></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">업종</label><input type="text" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.sector || '-'}" /></div>
                                     <div class="space-y-1.5"><label class="text-sm font-black text-slate-500 ml-1">종업원수 (명)</label><input type="number" readonly class="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value="${record.employeeCount || '0'}" /></div>
                                 </div>
@@ -1114,8 +1112,8 @@
                                     <input type="date" className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none" value={dateTo} onChange={e => setDateTo(e.target.value)} />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-500">업체번호</label>
-                                    <input type="text" placeholder="검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchBiz} onChange={e => setSearchBiz(e.target.value)} />
+                                    <label className="text-xs font-bold text-slate-500">업종</label>
+                                    <input type="text" placeholder="업종 검색..." className="block px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold focus:border-[#0055A5] outline-none w-32" value={searchBiz} onChange={e => setSearchBiz(e.target.value)} />
                                 </div>
                                 <div className="flex gap-2 ml-auto">
                                     <button onClick={() => { setFilter({ dateFrom, dateTo, searchBiz }); }}
@@ -1153,12 +1151,11 @@
                                         <tr className="bg-slate-50 text-xs font-black text-slate-500 uppercase tracking-wider border-b-2 border-slate-200">
                                             <th className="px-2 py-3 text-center w-10 whitespace-nowrap">#</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">상담일자</th>
-                                            <th className="px-2 py-3 text-center whitespace-nowrap">업체번호</th>
-                                            <th className="px-2 py-3 text-center whitespace-nowrap">출생년도</th>
+                                            <th className="px-2 py-3 text-center whitespace-nowrap">연령대</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">NICE</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">기보증</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">사업자</th>
-                                            <th className="px-2 py-3 text-center whitespace-nowrap">설립일자</th>
+                                            <th className="px-2 py-3 text-center whitespace-nowrap">업력</th>
                                             <th className="px-4 py-3 text-center whitespace-nowrap">업종</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">직원</th>
                                             <th className="px-2 py-3 text-center whitespace-nowrap">매출액</th>
@@ -1171,7 +1168,7 @@
                                     <tbody>
                                         {filteredRecords.length === 0 ? (
                                             <tr>
-                                                <td colSpan={15} className="px-4 py-16 text-center">
+                                                <td colSpan={14} className="px-4 py-16 text-center">
                                                     <div className="flex flex-col items-center gap-3">
                                                         <div className={`w-16 h-16 rounded-full flex items-center justify-center ${loading ? 'bg-blue-50' : 'bg-slate-100'}`}>
                                                             <Icon name={loading ? "loader-2" : "inbox"} size={32} className={loading ? "text-blue-500 animate-spin" : "text-slate-300"} />
@@ -1187,17 +1184,16 @@
                                                 <tr key={idx} className="border-b border-slate-100 hover:bg-blue-50/30 transition-colors table-row-animate" style={{ animationDelay: `${idx * 30}ms` }}>
                                                     <td className="px-2 py-3 text-center text-xs font-bold text-slate-400 whitespace-nowrap">{idx + 1}</td>
                                                     <td className="px-2 py-3 text-center font-bold text-slate-700 whitespace-nowrap">{r.consultDate || '-'}</td>
-                                                    <td className="px-2 py-3 text-center font-black text-[#0055A5] whitespace-nowrap">{r.businessNumber || '-'}</td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.birthYear || '-'}</td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.niceScore || '-'}</td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount ? `${r.guaranteedAmount}백만` : '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.ageGroup || '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.niceScoreRange || '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.guaranteedAmount || '-'}</td>
                                                     <td className="px-2 py-3 text-center text-xs font-bold text-slate-500 whitespace-nowrap">
                                                         {r.businessType === '법인' ?
                                                             <span className="bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded border border-purple-100 whitespace-nowrap">법인</span> :
                                                             <span className="bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-100 whitespace-nowrap">개인</span>
                                                         }
                                                     </td>
-                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.foundationDate || '-'}</td>
+                                                    <td className="px-2 py-3 text-center text-slate-600 whitespace-nowrap">{r.businessAge || '-'}</td>
                                                     <td className="px-2 py-3 text-center">
                                                         <div className="font-bold text-slate-700 text-[11px] max-w-[200px] mx-auto leading-tight line-clamp-2 overflow-hidden break-all">
                                                             {r.sector || '-'}
@@ -1250,7 +1246,7 @@
                     <Modal
                         isOpen={!!surveyModal}
                         onClose={() => setSurveyModal(null)}
-                        title={`📋 설문지 - ${surveyModal?.businessNumber || ''} (${surveyModal?.consultDate || ''})`}
+                        title={`📋 설문지 - ${surveyModal?.sector || ''} (${surveyModal?.consultDate || ''})`}
                         onPrint={() => printSurvey(surveyModal)}
                     >
                         {surveyModal && <SurveyViewer record={surveyModal} />}
@@ -1269,14 +1265,13 @@
                                 <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-6">
                                     <div className="flex items-baseline gap-2 mb-3 border-b border-slate-200 pb-1">
                                         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">기본정보 요약</h3>
-                                        <span className="text-xs font-bold text-slate-400 lowercase">(업체번호 : {reportModal.businessNumber || '-'})</span>
                                     </div>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <div><span className="text-xs text-slate-500 block">사업자구분</span><span className="text-sm font-black text-slate-800">{reportModal.businessType || '-'}</span></div>
-                                        <div><span className="text-xs text-slate-500 block">출생년도</span><span className="text-sm font-black text-slate-800">{reportModal.birthYear || '-'}년</span></div>
-                                        <div><span className="text-xs text-slate-500 block">NICE 점수</span><span className="text-sm font-black text-slate-800">{reportModal.niceScore || '0'}점</span></div>
-                                        <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '0'}백만원</span></div>
-                                        <div><span className="text-xs text-slate-500 block">설립일자</span><span className="text-sm font-black text-slate-800">{reportModal.foundationDate || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">연령대</span><span className="text-sm font-black text-slate-800">{reportModal.ageGroup || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">NICE 점수</span><span className="text-sm font-black text-slate-800">{reportModal.niceScoreRange || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">기보증금액</span><span className="text-sm font-black text-slate-800">{reportModal.guaranteedAmount || '-'}</span></div>
+                                        <div><span className="text-xs text-slate-500 block">업력</span><span className="text-sm font-black text-slate-800">{reportModal.businessAge || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">업종</span><span className="text-sm font-black text-slate-800">{reportModal.sector || '-'}</span></div>
                                         <div><span className="text-xs text-slate-500 block">종업원수</span><span className="text-sm font-black text-slate-800">{reportModal.employeeCount || '0'}명</span></div>
                                         <div><span className="text-xs text-slate-500 block">매출현황</span><span className="text-sm font-black text-slate-800">{reportModal.annualSales || '-'}백만원({reportModal.revenueStatus || '-'})</span></div>
