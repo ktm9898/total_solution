@@ -602,7 +602,8 @@
         };
 
         const App = () => {
-            // 연령대/NICE점수/기보증금액/업력 드롭다운 옵션
+            // 행정동/연령대/NICE점수/기보증금액/업력 드롭다운 옵션
+            const districtOptions = ['남영동', '보광동', '서빙고동', '용문동', '용산2가동', '원효로1동', '원효로2동', '이촌1동', '이촌2동', '이태원1동', '이태원2동', '청파동', '한강로동', '한남동', '후암동', '효창동'];
             const ageGroupOptions = ['20대', '30대', '40대', '50대', '60대', '70대 이상'];
             const niceScoreOptions = ['950점 이상', '900점 이상', '850점 이상', '800점 이상', '750점 이상', '700점 이상', '600점 이상', '600점 미만'];
             const guaranteedAmountOptions = ['없음', '1천만원 이하', '2천만원 이하', '3천만원 이하', '5천만원 이하', '7천만원 이하', '1억원 이하', '1억5천만원 이하', '2억원 이하', '2억원 초과'];
@@ -655,7 +656,7 @@
             useEffect(() => { localStorage.setItem('selected_model', selectedModel); }, [selectedModel]);
 
             const [formData, setFormData] = useState({
-                ageGroup: '', niceScoreRange: '', guaranteedAmount: '', businessAge: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '', businessType: '개인',
+                district: '', ageGroup: '', niceScoreRange: '', guaranteedAmount: '', businessAge: '', sector: '', employeeCount: '', annualSales: '', revenueStatus: '', notes: '', businessType: '개인',
                 benefits: { jobIncrease: false, jobCreation: false, intellectualProperty: false, socialInsurance: false, lowIncome: false, socialCare: false, smallBusiness: false, revenueDecrease: false },
                 scores: Array(11).fill(0)
             });
@@ -764,6 +765,10 @@
                                 <div className="space-y-4">
                                     <div className="mobile-card bg-white rounded-2xl p-5 shadow-lg border border-slate-100">
                                         <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-black text-slate-500">행정동</label>
+                                                <select className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.district} onChange={(e) => setFormData({ ...formData, district: e.target.value })}><option value="">행정동 선택</option>{districtOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>
+                                            </div>
                                             <div className="space-y-1.5">
                                                 <label className="text-xs font-black text-slate-500">연령대</label>
                                                 <select className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:border-[#0055A5] outline-none" value={formData.ageGroup} onChange={(e) => setFormData({ ...formData, ageGroup: e.target.value })}><option value="">연령대 선택</option>{ageGroupOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>
@@ -927,6 +932,7 @@
                                         </h3>
                                         <div className="grid grid-cols-2 gap-3">
                                             {[
+                                                ['행정동', formData.district || '-'],
                                                 ['연령대', formData.ageGroup || '-'],
                                                 ['NICE점수', formData.niceScoreRange || '-'],
                                                 ['기보증금액', formData.guaranteedAmount || '-'],
@@ -1090,6 +1096,7 @@
                     const payload = {
                         apiKey: APPS_SCRIPT_KEY,
                         consultDate: dateStr,
+                        district: formData.district,
                         ageGroup: formData.ageGroup,
                         niceScoreRange: formData.niceScoreRange,
                         guaranteedAmount: formData.guaranteedAmount,
@@ -1635,9 +1642,10 @@ ${structuredScores}
                         <div className="mb-6 report-info-container bg-slate-50 rounded-lg border border-slate-200 p-4">
                             <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider border-b border-slate-200 pb-1 flex items-baseline gap-2">
                                 <span>기본정보 요약</span>
+                                <span className="text-slate-600">({formData.businessType}사업자)</span>
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 report-info-grid">
-                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">사업자구분</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.businessType || "-"}</span></div>
+                                <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">행정동</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.district || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">연령대</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.ageGroup || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">NICE 점수</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.niceScoreRange || "-"}</span></div>
                                 <div className="report-info-item"><span className="text-xs text-slate-500 block report-info-label">기보증금액</span><span className="text-sm font-black text-slate-800 report-info-value">{formData.guaranteedAmount || "-"}</span></div>
@@ -1820,6 +1828,7 @@ ${structuredScores}
                                     </h2>
                                 </div>
                                 <div className="info-grid grid grid-cols-1 md:grid-cols-4 gap-y-5 gap-x-8">
+                                    <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">행정동</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.district} onChange={(e) => setFormData({ ...formData, district: e.target.value })}><option value="">행정동 선택</option>{districtOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">연령대</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.ageGroup} onChange={(e) => setFormData({ ...formData, ageGroup: e.target.value })}><option value="">연령대 선택</option>{ageGroupOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">NICE CB점수</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.niceScoreRange} onChange={(e) => setFormData({ ...formData, niceScoreRange: e.target.value })}><option value="">점수 범위 선택</option>{niceScoreOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
                                     <div className="space-y-1.5"><label className="text-sm font-black text-slate-500 ml-1">기보증금액</label><select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm outline-none text-base font-bold" value={formData.guaranteedAmount} onChange={(e) => setFormData({ ...formData, guaranteedAmount: e.target.value })}><option value="">기보증금액 선택</option>{guaranteedAmountOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></div>
