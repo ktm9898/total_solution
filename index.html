@@ -1158,6 +1158,55 @@
                 });
             };
 
+            // [추가] 각주 번호 순차 재배열 후처리 함수
+            const renumberCitations = (text) => {
+                const refIndex = text.lastIndexOf('참고자료:');
+                if (refIndex === -1) return text;
+                
+                const bodyText = text.substring(0, refIndex);
+                const refText = text.substring(refIndex);
+                
+                let refsStr = refText.replace('참고자료:', '').trim();
+                let matches = Array.from(refsStr.matchAll(/\[(\d+)\]\s*([^\[]+)/g));
+                let refMap = {};
+                matches.forEach(m => {
+                    let num = m[1];
+                    let name = m[2].trim();
+                    if (name.endsWith(',')) name = name.slice(0, -1).trim();
+                    refMap[num] = name; // oldNum -> name
+                });
+                
+                let newNum = 1;
+                const oldToNewMap = {};
+                const newRefOrder = [];
+                const seenNames = {}; // name -> newNum
+                
+                const bodyRegex = /\[(\d+)\]/g;
+                const newBodyText = bodyText.replace(bodyRegex, (match, num) => {
+                    if (!oldToNewMap[num]) {
+                        let refName = refMap[num] || `참고자료 ${num}`;
+                        if (seenNames[refName]) {
+                            // 이미 등장한 참고자료면 같은 번호 재사용
+                            oldToNewMap[num] = seenNames[refName];
+                        } else {
+                            // 새로운 참고자료면 새 번호 부여
+                            oldToNewMap[num] = newNum++;
+                            seenNames[refName] = oldToNewMap[num];
+                            newRefOrder.push({ newNum: oldToNewMap[num], name: refName });
+                        }
+                    }
+                    return `[${oldToNewMap[num]}]`;
+                });
+                
+                if (newRefOrder.length === 0) return text; 
+                
+                let newRefText = '참고자료: ';
+                const refParts = newRefOrder.map(item => `[${item.newNum}] ${item.name}`);
+                newRefText += refParts.join(', ');
+                
+                return newBodyText + newRefText;
+            };
+
             const runRealAIAnalysis = async () => {
                 if (selectedModel.includes('gemini') && !apiKey) { alert('Safe Connect Mode에서 Google API Key를 먼저 입력해주세요.'); return; }
                 if (selectedModel === 'groq' && !groqApiKey) { alert('Safe Connect Mode에서 Groq API Key를 먼저 입력해주세요.'); return; }
@@ -1549,6 +1598,8 @@ ${structuredScores}
                                 }
                             }
 
+                            rawText = renumberCitations(rawText);
+
                             setAiResponse(rawText);
                             setViewMode('report');
                             window.scrollTo(0, 0);
@@ -1598,6 +1649,8 @@ ${structuredScores}
                                     rawText = lines.slice(1).join('\n');
                                 }
                             }
+
+                            rawText = renumberCitations(rawText);
 
                             setAiResponse(rawText);
                             setViewMode('report');
