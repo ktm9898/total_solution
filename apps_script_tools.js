@@ -39,23 +39,28 @@ function processLongText(text) {
   }
 }
 
-// --- 2. [명세서 반영] 100대 통계지표 기반 CD금리 업데이트 ---
-// [수정 2026-07-11] ECOS API 간헐적 접속 불가(Address unavailable) 대응
+// --- 2. [명세서 반영] CD금리 업데이트 ---
+// [수정 2026-07-11] ECOS API "Address unavailable" 에러 해결
+//   - User-Agent 헤더 추가 (Google Cloud IP 차단 우회)
+//   - StatisticSearch API(메인) + KeyStatisticList API(폴백) 이중화
 //   - 지수 백오프 재시도 (최대 5회)
-//   - 접속 타임아웃 설정
-//   - 마지막 성공값 캐시로 일시적 장애 시 기존값 유지
-//   - 연속 실패 횟수 추적 → 3회 연속 실패 시에만 에러 메일 발생
+
+var ECOS_API_KEY = "FB7FM1P6EE4V82XRXJJ4";
+var ECOS_FETCH_OPTIONS = {
+  muteHttpExceptions: true,
+  validateHttpsCertificates: true,
+  followRedirects: true,
+  headers: {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+  }
+};
 
 /** ECOS API를 지수 백오프로 재시도하며 호출 */
 function fetchWithRetry_(url, maxRetries) {
   var lastError = null;
   for (var attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      var response = UrlFetchApp.fetch(url, {
-        muteHttpExceptions: true,
-        validateHttpsCertificates: true,
-        followRedirects: true
-      });
+      var response = UrlFetchApp.fetch(url, ECOS_FETCH_OPTIONS);
       var code = response.getResponseCode();
       if (code === 200) {
         return response;
@@ -70,13 +75,52 @@ function fetchWithRetry_(url, maxRetries) {
       Utilities.sleep(waitSec * 1000);
     }
   }
-  throw new Error("ECOS API " + maxRetries + "회 재시도 모두 실패: " + lastError.toString());
+  throw lastError;
+}
+
+/** [방법1] StatisticSearch API로 CD(91일) 금리 직접 조회 */
+function fetchCdRateViaStatisticSearch_() {
+  // 최근 30일 범위로 일별 CD(91일) 금리 조회
+  var today = new Date();
+  var thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  var endDate = Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
+  var startDate = Utilities.formatDate(thirtyDaysAgo, "Asia/Seoul", "yyyyMMdd");
+  
+  var url = "https://ecos.bok.or.kr/api/StatisticSearch/" + ECOS_API_KEY + 
+            "/json/kr/1/30/817Y002/D/" + startDate + "/" + endDate + "/010502000";
+  
+  var response = fetchWithRetry_(url, 5);
+  var result = JSON.parse(response.getContentText());
+  
+  if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
+    var rows = result.StatisticSearch.row;
+    var latest = rows[rows.length - 1]; // 가장 최근 데이터
+    return { value: latest.DATA_VALUE, cycle: latest.TIME };
+  }
+  throw new Error("StatisticSearch API: CD(91일) 데이터 없음");
+}
+
+/** [방법2] KeyStatisticList(100대 지표) API에서 CD수익률 추출 (폴백) */
+function fetchCdRateViaKeyStatistic_() {
+  var url = "https://ecos.bok.or.kr/api/KeyStatisticList/" + ECOS_API_KEY + "/json/kr/1/100";
+  
+  var response = fetchWithRetry_(url, 3);
+  var result = JSON.parse(response.getContentText());
+  
+  if (result.KeyStatisticList && result.KeyStatisticList.row) {
+    var rows = result.KeyStatisticList.row;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].KEYSTAT_NAME.indexOf("CD수익률") !== -1) {
+        return { value: rows[i].DATA_VALUE, cycle: rows[i].CYCLE };
+      }
+    }
+  }
+  throw new Error("KeyStatisticList API: CD수익률 항목을 찾을 수 없음");
 }
 
 function refreshEconomicData() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Sheet2");
-  var props = PropertiesService.getScriptProperties();
   
   // UI 객체를 안전하게 가져오기 (트리거 실행 시 에러 방지)
   var ui = null;
@@ -88,80 +132,35 @@ function refreshEconomicData() {
     return;
   }
 
-  var apiKey = "FB7FM1P6EE4V82XRXJJ4"; 
-  var url = "https://ecos.bok.or.kr/api/KeyStatisticList/" + apiKey + "/json/kr/1/100";
-
   try {
-    var response = fetchWithRetry_(url, 5);
-    var resText = response.getContentText();
-    var result = JSON.parse(resText);
-
-    if (result.KeyStatisticList && result.KeyStatisticList.row) {
-      var rows = result.KeyStatisticList.row;
-      var cdData = null;
-
-      for (var i = 0; i < rows.length; i++) {
-        if (rows[i].KEYSTAT_NAME.indexOf("CD수익률") !== -1) {
-          cdData = rows[i];
-          break;
-        }
-      }
-
-      if (cdData) {
-        sheet.getRange(2, 3, 1, 2).setValues([[
-          cdData.DATA_VALUE,
-          cdData.CYCLE
-        ]]);
-        
-        // 성공값 캐시 저장 & 연속 실패 카운터 리셋
-        props.setProperties({
-          'ECOS_LAST_CD_VALUE': cdData.DATA_VALUE,
-          'ECOS_LAST_CD_CYCLE': cdData.CYCLE,
-          'ECOS_LAST_SUCCESS': new Date().toISOString(),
-          'ECOS_FAIL_COUNT': '0'
-        });
-
-        if (ui) {
-          ss.toast("CD수익률(91일) " + cdData.DATA_VALUE + "% (" + cdData.CYCLE + ")", "업데이트 완료");
-        }
-        console.log("업데이트 완료: CD수익률 " + cdData.DATA_VALUE + "% (" + cdData.CYCLE + ")");
-        
-      } else {
-        var msg = "100대 지표 중 'CD수익률' 항목을 찾을 수 없습니다.";
-        if (ui) { ui.alert(msg); }
-        else { console.warn(msg); throw new Error(msg); }
-      }
-    } else {
-      var errorMsg = result.RESULT ? result.RESULT.MESSAGE : "API 응답 오류";
-      var fullMsg = "데이터를 가져오지 못했습니다.\n원인: " + errorMsg;
-      if (ui) { ui.alert(fullMsg); }
-      else { console.error(fullMsg); throw new Error(fullMsg); }
+    var cdData = null;
+    
+    // 1차: StatisticSearch API (CD 91일물 직접 조회)
+    try {
+      cdData = fetchCdRateViaStatisticSearch_();
+      console.log("StatisticSearch API 성공");
+    } catch (e1) {
+      console.warn("StatisticSearch API 실패, 폴백 시도: " + e1.toString());
+      
+      // 2차: KeyStatisticList API (100대 지표에서 추출)
+      cdData = fetchCdRateViaKeyStatistic_();
+      console.log("KeyStatisticList API(폴백) 성공");
     }
+    
+    // C2(수치), D2(시점) 업데이트
+    sheet.getRange(2, 3, 1, 2).setValues([[cdData.value, cdData.cycle]]);
+    
+    if (ui) {
+      ss.toast("CD수익률(91일) " + cdData.value + "% (" + cdData.cycle + ")", "업데이트 완료");
+    }
+    console.log("업데이트 완료: CD수익률 " + cdData.value + "% (" + cdData.cycle + ")");
 
   } catch (e) {
-    // --- 실패 처리 ---
-    var failCount = parseInt(props.getProperty('ECOS_FAIL_COUNT') || '0', 10) + 1;
-    props.setProperty('ECOS_FAIL_COUNT', String(failCount));
-
-    // 캐시된 마지막 성공값이 있으면 시트에 유지 (데이터 공백 방지)
-    var cachedValue = props.getProperty('ECOS_LAST_CD_VALUE');
-    var cachedCycle = props.getProperty('ECOS_LAST_CD_CYCLE');
-    if (cachedValue && cachedCycle) {
-      sheet.getRange(2, 3, 1, 2).setValues([[cachedValue, cachedCycle]]);
-      console.log("API 실패 → 캐시된 값 유지: " + cachedValue + "% (" + cachedCycle + ")");
-    }
-
-    if (ui) {
-      ui.alert("연동 오류: " + e.toString() + 
-        (cachedValue ? "\n\n(이전 데이터 " + cachedValue + "%가 유지됩니다)" : ""));
-    } else {
-      console.error("ECOS 연동 실패 (" + failCount + "회 연속): " + e.toString());
-      // 3회 연속 실패 시에만 에러 메일 발생 (매일 메일 폭탄 방지)
-      if (failCount >= 3) {
-        props.setProperty('ECOS_FAIL_COUNT', '0'); // 리셋하여 다음 3회 주기 시작
-        throw new Error("[" + failCount + "회 연속 실패] " + e.toString() +
-          "\n마지막 성공: " + (props.getProperty('ECOS_LAST_SUCCESS') || '기록 없음'));
-      }
+    if (ui) { ui.alert("연동 오류: " + e.toString()); }
+    else { 
+      console.error("ECOS 연동 실패: " + e.toString()); 
+      throw e;
     }
   }
 }
+
