@@ -119,7 +119,7 @@ function fetchCdRateViaKeyStatistic_() {
 }
 
 function refreshEconomicData() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActive();
   var sheet = ss.getSheetByName("Sheet2");
   
   // UI 객체를 안전하게 가져오기 (트리거 실행 시 에러 방지)
