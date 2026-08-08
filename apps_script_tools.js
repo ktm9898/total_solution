@@ -150,17 +150,82 @@ function refreshEconomicData() {
     // C2(수치), D2(시점) 업데이트
     sheet.getRange(2, 3, 1, 2).setValues([[cdData.value, cdData.cycle]]);
     
+    // 성공 시 재시도 카운트 초기화 및 임시 트리거 정리
+    resetRetryState_();
+    
     if (ui) {
       ss.toast("CD수익률(91일) " + cdData.value + "% (" + cdData.cycle + ")", "업데이트 완료");
     }
     console.log("업데이트 완료: CD수익률 " + cdData.value + "% (" + cdData.cycle + ")");
 
   } catch (e) {
-    if (ui) { ui.alert("연동 오류: " + e.toString()); }
-    else { 
+    if (ui) { 
+      ui.alert("연동 오류: " + e.toString()); 
+    } else { 
       console.error("ECOS 연동 실패: " + e.toString()); 
-      throw e;
+      // 트리거(비화면) 실행 시 30분 뒤 자동 재시도 메커니즘 처리
+      handleTriggerFailure_(e);
     }
   }
+}
+
+/**
+ * 트리거 실행 중 실패 처리: 30분 간격으로 최대 3회 재시도 후 최종 실패 시 에러 발생(메일 발송)
+ */
+var MAX_AUTO_RETRIES = 3;
+
+function handleTriggerFailure_(error) {
+  var props = PropertiesService.getScriptProperties();
+  var currentRetry = parseInt(props.getProperty("ECOS_RETRY_COUNT") || "0", 10);
+  
+  if (currentRetry < MAX_AUTO_RETRIES) {
+    currentRetry += 1;
+    props.setProperty("ECOS_RETRY_COUNT", currentRetry.toString());
+    
+    scheduleAutoRetry_();
+    console.warn("ECOS API 연동 실패 (" + currentRetry + "/" + MAX_AUTO_RETRIES + "회 시도): 30분 후 자동 재시도 트리거가 생성되었습니다.");
+  } else {
+    // 최대 재시도 횟수를 모두 초과한 경우 상태 초기화 후 에러 던짐 -> 구글 알림 메일 발송
+    resetRetryState_();
+    throw new Error("ECOS 연동 최종 실패 (30분 간격 " + MAX_AUTO_RETRIES + "회 자동 재시도 모두 실패): " + error.toString());
+  }
+}
+
+/** 30분 후 실행될 일회성 트리거 생성 */
+function scheduleAutoRetry_() {
+  cleanUpRetryTriggers_();
+  ScriptApp.newTrigger('refreshEconomicDataRetry_')
+    .timeBased()
+    .after(30 * 60 * 1000)
+    .create();
+}
+
+/** 30분 후 자동 재시도 실행 핸들러 */
+function refreshEconomicDataRetry_() {
+  try {
+    console.log("30분 후 자동 재시도 실행 중...");
+    refreshEconomicData();
+  } catch (e) {
+    console.error("재시도 중 에러 발생: " + e.toString());
+    throw e;
+  } finally {
+    cleanUpRetryTriggers_();
+  }
+}
+
+/** 임시 재시도 트리거 정리 */
+function cleanUpRetryTriggers_() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'refreshEconomicDataRetry_') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+}
+
+/** 재시도 카운트 및 임시 트리거 상태 초기화 */
+function resetRetryState_() {
+  PropertiesService.getScriptProperties().deleteProperty("ECOS_RETRY_COUNT");
+  cleanUpRetryTriggers_();
 }
 
