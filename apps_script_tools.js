@@ -120,6 +120,24 @@ function fetchCdRateViaKeyStatistic_() {
   throw new Error("KeyStatisticList API: CD수익률 항목을 찾을 수 없음");
 }
 
+/** [방법3] 네이버 금융 수집 (ECOS 전체 차단시 3차 폴백) */
+function fetchCdRateViaNaverFinance_() {
+  var url = "https://finance.naver.com/marketindex/interestDetail.naver?marketindexCd=IRR_CD91";
+  var response = fetchWithRetry_(url, 2);
+  var html = response.getContentText("EUC-KR");
+  
+  // 최근 금리 추출 (예: <em class="no_up"><span class="blind">3.53</span>)
+  var match = html.match(/<span\s+class="blind">([\d\.]+)<\/span>/);
+  var dateMatch = html.match(/<span\s+class="date">([\d\.]+)/);
+  
+  if (match && match[1]) {
+    var today = new Date();
+    var cycle = dateMatch ? dateMatch[1].replace(/\./g, "") : Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
+    return { value: match[1], cycle: cycle };
+  }
+  throw new Error("Naver Finance API: CD(91일) 금리 추출 실패");
+}
+
 function refreshEconomicData() {
   var ss = SpreadsheetApp.getActive();
   var sheet = ss.getSheetByName("Sheet2");
@@ -142,11 +160,18 @@ function refreshEconomicData() {
       cdData = fetchCdRateViaStatisticSearch_();
       console.log("StatisticSearch API 성공");
     } catch (e1) {
-      console.warn("StatisticSearch API 실패, 폴백 시도: " + e1.toString());
+      console.warn("StatisticSearch API 실패, 2차 폴백 시도: " + e1.toString());
       
-      // 2차: KeyStatisticList API (100대 지표에서 추출)
-      cdData = fetchCdRateViaKeyStatistic_();
-      console.log("KeyStatisticList API(폴백) 성공");
+      try {
+        // 2차: KeyStatisticList API (100대 지표에서 추출)
+        cdData = fetchCdRateViaKeyStatistic_();
+        console.log("KeyStatisticList API(2차 폴백) 성공");
+      } catch (e2) {
+        console.warn("KeyStatisticList API 실패, 3차 네이버 금융 폴백 시도: " + e2.toString());
+        // 3차: 네이버 금융 웹 스크래핑 (ECOS 완전 차단 시)
+        cdData = fetchCdRateViaNaverFinance_();
+        console.log("네이버 금융(3차 폴백) 성공");
+      }
     }
     
     // C2(수치), D2(시점) 업데이트
@@ -164,33 +189,19 @@ function refreshEconomicData() {
     if (ui) { 
       ui.alert("연동 오류: " + e.toString()); 
     } else { 
-      console.error("ECOS 연동 실패: " + e.toString()); 
-      // 트리거(비화면) 실행 시 30분 뒤 자동 재시도 메커니즘 처리
+      console.error("CD금리 데이터 연동 실패: " + e.toString()); 
+      // 트리거(비화면) 실행 시 예외를 던져 구글 오류 알림 메일이 즉시 전달되도록 함 (타임아웃 방지)
       handleTriggerFailure_(e);
     }
   }
 }
 
 /**
- * 트리거 실행 중 실패 처리: 30분 간격으로 최대 3회 재시도 후 최종 실패 시 에러 발생(메일 발송)
+ * 트리거 실행 중 실패 처리: 실패 사유를 구글 에러 리포팅 메일로 전달되도록 명시적 예외 발생
  */
-var MAX_AUTO_RETRIES = 3;
-
 function handleTriggerFailure_(error) {
-  var props = PropertiesService.getScriptProperties();
-  var currentRetry = parseInt(props.getProperty("ECOS_RETRY_COUNT") || "0", 10);
-  
-  if (currentRetry < MAX_AUTO_RETRIES) {
-    currentRetry += 1;
-    props.setProperty("ECOS_RETRY_COUNT", currentRetry.toString());
-    
-    scheduleAutoRetry_();
-    console.warn("ECOS API 연동 실패 (" + currentRetry + "/" + MAX_AUTO_RETRIES + "회 시도): 30분 후 자동 재시도 트리거가 생성되었습니다.");
-  } else {
-    // 최대 재시도 횟수를 모두 초과한 경우 상태 초기화 후 에러 던짐 -> 구글 알림 메일 발송
-    resetRetryState_();
-    throw new Error("ECOS 연동 최종 실패 (30분 간격 " + MAX_AUTO_RETRIES + "회 자동 재시도 모두 실패): " + error.toString());
-  }
+  resetRetryState_();
+  throw new Error("[실무비서 CD금리 업데이트 실패] 원인: " + error.toString());
 }
 
 /** 30분 후 실행될 일회성 트리거 생성 */
