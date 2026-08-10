@@ -55,7 +55,7 @@ var ECOS_FETCH_OPTIONS = {
   }
 };
 
-/** ECOS API를 지수 백오프로 재시도하며 호출 */
+/** ECOS API를 짧은 지수 백오프로 재시도하며 호출 */
 function fetchWithRetry_(url, maxRetries) {
   var lastError = null;
   for (var attempt = 0; attempt < maxRetries; attempt++) {
@@ -69,9 +69,9 @@ function fetchWithRetry_(url, maxRetries) {
     } catch (e) {
       lastError = e;
     }
-    // 지수 백오프 대기: 2초, 4초, 8초, 16초, 32초
+    // 짧은 지수 백오프 대기: 1.5초, 3초
     if (attempt < maxRetries - 1) {
-      var waitSec = Math.pow(2, attempt + 1);
+      var waitSec = 1.5 * (attempt + 1);
       Utilities.sleep(waitSec * 1000);
     }
   }
@@ -89,7 +89,8 @@ function fetchCdRateViaStatisticSearch_() {
   var url = "https://ecos.bok.or.kr/api/StatisticSearch/" + ECOS_API_KEY + 
             "/json/kr/1/30/817Y002/D/" + startDate + "/" + endDate + "/010502000";
   
-  var response = fetchWithRetry_(url, 5);
+  // 최대 2회 재시도 (실패 시 빠르게 폴백 및 트리거 재시도로 전환)
+  var response = fetchWithRetry_(url, 2);
   var result = JSON.parse(response.getContentText());
   
   if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
@@ -104,7 +105,8 @@ function fetchCdRateViaStatisticSearch_() {
 function fetchCdRateViaKeyStatistic_() {
   var url = "https://ecos.bok.or.kr/api/KeyStatisticList/" + ECOS_API_KEY + "/json/kr/1/100";
   
-  var response = fetchWithRetry_(url, 3);
+  // 최대 2회 재시도
+  var response = fetchWithRetry_(url, 2);
   var result = JSON.parse(response.getContentText());
   
   if (result.KeyStatisticList && result.KeyStatisticList.row) {
