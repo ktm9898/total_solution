@@ -2025,8 +2025,10 @@ ${structuredScores}
                                     {/* MODE 1: 원본 문서 파일 업로드 (Kordoc) */}
                                     {uploadTab === 1 && (
                                         <div className="space-y-3">
+                                            {/* 서버 상태 안내 상자 */}
                                             <div className="p-3 bg-amber-500/10 border-l-4 border-amber-400 rounded-lg text-amber-200 text-[11px] leading-relaxed">
-                                                <strong>안내:</strong> 업로드 전 프로젝트 폴더에서 <code>python kordoc_server.py</code> (또는 run_kordoc_background.vbs) 백그라운드 서버를 실행해 주세요. (HWP, HWPX, PDF, XLSX, DOCX 지원)
+                                                <strong>⚠️ 서버 연결 확인:</strong> 업로드 전 프로젝트 폴더의 <code>run_kordoc_background.vbs</code>를 더블클릭하세요.<br/>
+                                                • 브라우저 차단 시: <a href="http://127.0.0.1:5000/" target="_blank" className="text-emerald-400 font-bold underline">[여기 클릭하여 로컬 서버 주소 열기 (http://127.0.0.1:5000)]</a> 창 확인 후 다시 업로드하세요.
                                             </div>
 
                                             <div className="border border-dashed border-emerald-500/50 hover:border-emerald-400 rounded-xl p-6 text-center bg-slate-800/40 transition-colors">
@@ -2056,12 +2058,13 @@ ${structuredScores}
                                                             formData.append('apiKey', apiKey);
                                                             formData.append('webhookUrl', sheetConfig.referenceWebhookUrl);
 
-                                                            // meeting_copilot Kordoc 로컬 서버 연동
-                                                            const serverUrl = 'http://localhost:5000/upload';
-                                                            const res = await fetch(serverUrl, {
-                                                                method: 'POST',
-                                                                body: formData
-                                                            });
+                                                            // localhost 및 127.0.0.1 교차 재시도 (PNA 정책 대처)
+                                                            let res;
+                                                            try {
+                                                                res = await fetch('http://127.0.0.1:5000/upload', { method: 'POST', body: formData });
+                                                            } catch (err1) {
+                                                                res = await fetch('http://localhost:5000/upload', { method: 'POST', body: formData });
+                                                            }
 
                                                             const data = await res.json();
                                                             if (!res.ok || data.error) {
@@ -2072,7 +2075,7 @@ ${structuredScores}
 
                                                         } catch (err) {
                                                             console.error("Mode 1 Upload Error:", err);
-                                                            setUploadState({ status: 'error', message: '❌ 등록 실패', detail: err.message, progress: 0 });
+                                                            setUploadState({ status: 'error', message: '❌ 등록 실패 (127.0.0.1:5000 서버 주소 열기 링크를 확인하세요)', detail: err.message, progress: 0 });
                                                         }
                                                     }}
                                                 />
