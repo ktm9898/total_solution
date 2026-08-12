@@ -142,8 +142,7 @@ function fetchCdRateViaEcosHomepage_() {
     return { value: cdMatch[1], cycle: cycle };
   }
   
-  // ECOS 메인페이지 추출 실패 시 4차 네이버 금융 수집 시도
-  return fetchCdRateViaNaverFinance_();
+  throw new Error("ECOS 메인 홈페이지 파싱 실패");
 }
 
 /** [방법4] 네이버 금융 수집 (4차 예비 폴백) */
@@ -196,17 +195,25 @@ function refreshEconomicData() {
       cdData = fetchCdRateViaStatisticSearch_();
       console.log("StatisticSearch API 성공");
     } catch (e1) {
-      console.warn("StatisticSearch API 실패, 2차 폴백 시도: " + e1.toString());
+      console.warn("StatisticSearch API 실패: " + e1.toString());
       
       try {
         // 2차: KeyStatisticList API (100대 지표에서 추출)
         cdData = fetchCdRateViaKeyStatistic_();
         console.log("KeyStatisticList API(2차 폴백) 성공");
       } catch (e2) {
-        console.warn("KeyStatisticList API 실패, 3차 ECOS 메인 홈페이지 스크래핑 시도: " + e2.toString());
-        // 3차: ECOS 메인 홈페이지 웹 스크래핑
-        cdData = fetchCdRateViaEcosHomepage_();
-        console.log("ECOS 메인 홈페이지(3차 폴백) 성공");
+        console.warn("KeyStatisticList API 실패: " + e2.toString());
+        
+        try {
+          // 3차: ECOS 메인 홈페이지 웹 스크래핑
+          cdData = fetchCdRateViaEcosHomepage_();
+          console.log("ECOS 메인 홈페이지(3차 폴백) 성공");
+        } catch (e3) {
+          console.warn("ECOS 메인 홈페이지 실패, 4차 네이버 금융 시도: " + e3.toString());
+          // 4차: 네이버 금융 수집 (ECOS 도메인 전체 차단 대비 4차 독립 폴백)
+          cdData = fetchCdRateViaNaverFinance_();
+          console.log("네이버 금융(4차 폴백) 성공");
+        }
       }
     }
     
