@@ -17,7 +17,7 @@ import urllib.request
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-PORT = 5000
+PORT = 5001
 
 class KordocHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):

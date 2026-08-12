@@ -639,7 +639,7 @@
             const [serverConnected, setServerConnected] = useState(false);
             const [uploadState, setUploadState] = useState({ status: 'idle', message: '', detail: '', progress: 0 });
 
-            // 로컬 Kordoc 서버 (http://127.0.0.1:5000) 헬스체크 (에러 콘솔 억제)
+            // 로컬 Kordoc 서버 (http://127.0.0.1:5001) 헬스체크 (에러 콘솔 억제)
             useEffect(() => {
                 if (!showUploadModal) return;
                 let isMounted = true;
@@ -647,9 +647,9 @@
                     try {
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 1500);
-                        let res = await fetch('http://127.0.0.1:5000/', { method: 'GET', signal: controller.signal }).catch(() => null);
+                        let res = await fetch('http://127.0.0.1:5001/', { method: 'GET', signal: controller.signal }).catch(() => null);
                         if (!res) {
-                            res = await fetch('http://localhost:5000/', { method: 'GET', signal: controller.signal }).catch(() => null);
+                            res = await fetch('http://localhost:5001/', { method: 'GET', signal: controller.signal }).catch(() => null);
                         }
                         clearTimeout(timeoutId);
                         if (res && res.ok && isMounted) {
@@ -2056,12 +2056,12 @@ ${structuredScores}
                                             {/* 서버 상태 안내 상자 (serverConnected 상태 동적 변환) */}
                                             {serverConnected ? (
                                                 <div className="p-3 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-lg text-emerald-300 text-[11px] leading-relaxed">
-                                                    🟢 <strong>연결 완료:</strong> 내 PC의 Kordoc 파서 서버(127.0.0.1:5000)가 정상 구동 중입니다. 아래에서 원본 문서를 선택하세요!
+                                                    🟢 <strong>연결 완료:</strong> 내 PC의 Kordoc 파서 서버(127.0.0.1:5001)가 정상 구동 중입니다. 아래에서 원본 문서를 선택하세요!
                                                 </div>
                                             ) : (
                                                 <div className="p-3 bg-amber-500/10 border-l-4 border-amber-400 rounded-lg text-amber-200 text-[11px] leading-relaxed">
                                                     ⚠️ <strong>서버 미연결/차단:</strong> 업로드 전 프로젝트 폴더의 <code>run_kordoc_background.vbs</code>를 더블클릭하세요.<br/>
-                                                    • 브라우저 차단 시: <a href="http://127.0.0.1:5000/" target="_blank" className="text-emerald-400 font-bold underline">[여기 클릭하여 로컬 서버 주소 열기 (http://127.0.0.1:5000)]</a> 창 확인 후 다시 업로드하세요.
+                                                    • 브라우저 차단 시: <a href="http://127.0.0.1:5001/" target="_blank" className="text-emerald-400 font-bold underline">[여기 클릭하여 로컬 서버 주소 열기 (http://127.0.0.1:5001)]</a> 창 확인 후 다시 업로드하세요.
                                                 </div>
                                             )}
 
@@ -2095,9 +2095,9 @@ ${structuredScores}
                                                             // localhost 및 127.0.0.1 교차 재시도 (PNA 정책 대처)
                                                             let res;
                                                             try {
-                                                                res = await fetch('http://127.0.0.1:5000/upload', { method: 'POST', body: formData });
+                                                                res = await fetch('http://127.0.0.1:5001/upload', { method: 'POST', body: formData });
                                                             } catch (err1) {
-                                                                res = await fetch('http://localhost:5000/upload', { method: 'POST', body: formData });
+                                                                res = await fetch('http://localhost:5001/upload', { method: 'POST', body: formData });
                                                             }
 
                                                             const data = await res.json();
