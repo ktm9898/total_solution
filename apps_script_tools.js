@@ -46,9 +46,15 @@ function doPost(e) {
       var item = items[i];
       var priority = item.priority || ""; // 요청사항: 우선순위는 공란
       var title = item.title || item.자료명 || "제목 없음";
-      var tags = Array.isArray(item.tags) ? item.tags.join(" ") : (item.tags || item.검색태그 || "");
+      
+      // 검색 태그 (meeting_copilot의 keywords 호환 지원)
+      var rawTags = item.tags || item.검색태그 || item.keywords;
+      var tags = Array.isArray(rawTags) ? rawTags.map(function(t){ return String(t).startsWith('#') ? t : '#'+t; }).join(" ") : (rawTags || "");
+      
       var summary = item.summary || item.핵심요약 || "";
-      var target = item.target || item.분석대상 || "";
+      
+      // 분석 대상 (meeting_copilot의 category 호환 지원)
+      var target = item.target || item.분석대상 || item.category || "전업종 / 전체";
       var fullText = item.fullText || item.원문 || "";
 
       // 원문이 45,000자 초과 시 Cell별 분할 저장 (F열부터)
