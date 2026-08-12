@@ -633,6 +633,9 @@
             const [knowledgeData, setKnowledgeData] = useState({ financial: null, nonFinancial: null, reference: null });
             const [showSheetConfig, setShowSheetConfig] = useState(false);
             const [showUploadModal, setShowUploadModal] = useState(false);
+            const [uploadTab, setUploadTab] = useState(1); // 1: 원본 파싱 등록, 2: 파싱 완료 텍스트 직접 등록
+            const [parsedTitle, setParsedTitle] = useState('');
+            const [parsedText, setParsedText] = useState('');
             const [uploadState, setUploadState] = useState({ status: 'idle', message: '', detail: '', progress: 0 });
             // 시트 유효성 검증 상태 (실제 로드 성공 여부) - localStorage에 저장하여 새로고침 시에도 유지
             const [sheetStatus, setSheetStatus] = useState(() => {
@@ -1970,18 +1973,18 @@ ${structuredScores}
                         </div>
                     </div>
 
-                    {/* 📤 참고자료 문서 자동 업로드 모달 */}
+                    {/* 📤 참고자료 문서 자동 업로드 모달 (Meeting Copilot 동기화 2-Mode 탭 구조) */}
                     {showUploadModal && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full shadow-2xl text-white space-y-5">
+                            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-lg w-full shadow-2xl text-white space-y-4">
                                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                                     <div className="flex items-center gap-2">
                                         <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
                                             <Icon name="upload-cloud" size={20} />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-base text-white">참고자료 문서 자동 업로드</h3>
-                                            <p className="text-xs text-slate-400">PDF, TXT 보고서를 AI가 요약하여 구글 시트1에 자동 등록합니다</p>
+                                            <h3 className="font-bold text-base text-white">지식 DB 참고자료 등록</h3>
+                                            <p className="text-xs text-slate-400">보고서를 AI가 요약 분석하여 참고자료 시트1에 등록합니다</p>
                                         </div>
                                     </div>
                                     <button onClick={() => setShowUploadModal(false)} className="text-slate-400 hover:text-white p-1">
@@ -2001,53 +2004,155 @@ ${structuredScores}
                                         />
                                     </div>
 
-                                    {/* 옵션 1: 브라우저 직접 파일 업로드 */}
-                                    <div className="border border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-6 text-center bg-slate-800/50 transition-colors">
-                                        <input
-                                            type="file"
-                                            id="refFileInput"
-                                            accept=".pdf,.txt,.md"
-                                            className="hidden"
-                                            onChange={async (e) => {
-                                                const file = e.target.files[0];
-                                                if (!file) return;
+                                    {/* 2개 모드 선택 탭 (Meeting Copilot 최신 버전과 100% 동일) */}
+                                    <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+                                        <button
+                                            type="button"
+                                            onClick={() => setUploadTab(1)}
+                                            className={`flex-1 py-2 text-center rounded-lg font-bold transition-all ${uploadTab === 1 ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            1. 원본 문서 파싱 등록 (Kordoc)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setUploadTab(2)}
+                                            className={`flex-1 py-2 text-center rounded-lg font-bold transition-all ${uploadTab === 2 ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                                        >
+                                            2. 파싱 완료 텍스트 직접 등록
+                                        </button>
+                                    </div>
 
-                                                if (!apiKey) {
-                                                    alert("Gemini API 키가 필요합니다. 상단 API 키 설정을 확인해 주세요.");
-                                                    return;
-                                                }
-                                                if (!sheetConfig.referenceWebhookUrl) {
-                                                    alert("Webhook URL을 입력해 주세요.");
-                                                    return;
-                                                }
+                                    {/* MODE 1: 원본 문서 파일 업로드 (Kordoc) */}
+                                    {uploadTab === 1 && (
+                                        <div className="space-y-3">
+                                            <div className="p-3 bg-amber-500/10 border-l-4 border-amber-400 rounded-lg text-amber-200 text-[11px] leading-relaxed">
+                                                <strong>안내:</strong> 업로드 전 프로젝트 폴더에서 <code>python kordoc_server.py</code> (또는 run_kordoc_background.vbs) 백그라운드 서버를 실행해 주세요. (HWP, HWPX, PDF, XLSX, DOCX 지원)
+                                            </div>
 
-                                                setUploadState({ status: 'uploading', message: '🚀 파일 텍스트 추출 중...', detail: file.name, progress: 25 });
+                                            <div className="border border-dashed border-emerald-500/50 hover:border-emerald-400 rounded-xl p-6 text-center bg-slate-800/40 transition-colors">
+                                                <input
+                                                    type="file"
+                                                    id="fileInputMode1"
+                                                    accept=".hwp,.hwpx,.pdf,.xlsx,.docx,.doc,.txt"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
 
-                                                try {
-                                                    let extractedText = '';
-                                                    if (file.name.endsWith('.pdf')) {
-                                                        // PDF 브라우저 텍스트 추출
-                                                        setUploadState({ status: 'uploading', message: '📄 PDF 텍스트 파싱 중...', detail: file.name, progress: 40 });
-                                                        const arrayBuffer = await file.arrayBuffer();
-                                                        const textDecoder = new TextDecoder('utf-8');
-                                                        extractedText = textDecoder.decode(arrayBuffer).replace(/[^\x20-\x7E\uAC00-\uD7A3\n\r\t]/g, ' ');
-                                                    } else {
-                                                        extractedText = await file.text();
+                                                        if (!apiKey) {
+                                                            alert("Gemini API 키가 필요합니다. 상단 API 키 설정을 확인해 주세요.");
+                                                            return;
+                                                        }
+                                                        if (!sheetConfig.referenceWebhookUrl) {
+                                                            alert("Webhook URL을 입력해 주세요.");
+                                                            return;
+                                                        }
+
+                                                        setUploadState({ status: 'uploading', message: '🚀 내 PC Kordoc 서버에서 문서 텍스트 파싱 중...', detail: file.name, progress: 30 });
+
+                                                        try {
+                                                            const formData = new FormData();
+                                                            formData.append('file', file);
+                                                            formData.append('apiKey', apiKey);
+                                                            formData.append('webhookUrl', sheetConfig.referenceWebhookUrl);
+
+                                                            // meeting_copilot Kordoc 로컬 서버 연동
+                                                            const serverUrl = 'http://localhost:5000/upload';
+                                                            const res = await fetch(serverUrl, {
+                                                                method: 'POST',
+                                                                body: formData
+                                                            });
+
+                                                            const data = await res.json();
+                                                            if (!res.ok || data.error) {
+                                                                throw new Error(data.error || `HTTP ${res.status}`);
+                                                            }
+
+                                                            setUploadState({ status: 'success', message: '✅ Kordoc 파싱 & Gemini AI 요약 구글 시트 저장 완료!', detail: `[${file.name}] 참고자료 시트1 저장 완료`, progress: 100 });
+
+                                                        } catch (err) {
+                                                            console.error("Mode 1 Upload Error:", err);
+                                                            setUploadState({ status: 'error', message: '❌ 등록 실패', detail: err.message, progress: 0 });
+                                                        }
+                                                    }}
+                                                />
+                                                <label htmlFor="fileInputMode1" className="cursor-pointer space-y-2 block">
+                                                    <Icon name="file-text" size={32} className="mx-auto text-emerald-400" />
+                                                    <div className="font-bold text-sm text-slate-200">클릭하여 원본 문서 선택 (HWP, PDF, DOCX 등)</div>
+                                                    <p className="text-[11px] text-slate-400">내 PC Kordoc 파서가 텍스트 추출 후 Gemini가 자동 요약합니다</p>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* MODE 2: 파싱 완료 텍스트 직접 등록 (로컬 서버 연결 없이 직통 등록) */}
+                                    {uploadTab === 2 && (
+                                        <div className="space-y-3">
+                                            <div className="p-3 bg-blue-500/10 border-l-4 border-blue-400 rounded-lg text-blue-200 text-[11px] leading-relaxed">
+                                                <strong>안내:</strong> 로컬 파서 서버 연결 없이 파싱 완료된 텍스트/마크다운(.md)을 붙여넣거나 드롭하면 Gemini AI가 분석하여 구글 시트에 바로 등록합니다.
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    value={parsedTitle}
+                                                    onChange={(e) => setParsedTitle(e.target.value)}
+                                                    placeholder="문서 제목 입력 (예: 2026 용산구 상권 분석 보고서)"
+                                                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-xs text-white outline-none focus:border-emerald-400"
+                                                />
+                                                <textarea
+                                                    rows={5}
+                                                    value={parsedText}
+                                                    onChange={(e) => setParsedText(e.target.value)}
+                                                    placeholder="파싱된 마크다운(.md) 또는 텍스트 내용을 붙여넣으세요..."
+                                                    className="w-full bg-slate-800 border border-slate-700 rounded p-2 text-xs text-white outline-none focus:border-emerald-400 font-mono resize-none"
+                                                />
+                                            </div>
+
+                                            <div className="border border-dashed border-slate-700 rounded-lg p-2 text-center bg-slate-800/30">
+                                                <input
+                                                    type="file"
+                                                    id="fileInputMode2"
+                                                    accept=".md,.txt,.markdown"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
+                                                        setParsedTitle(file.name.replace(/\.[^/.]+$/, ""));
+                                                        const text = await file.text();
+                                                        setParsedText(text);
+                                                    }}
+                                                />
+                                                <label htmlFor="fileInputMode2" className="cursor-pointer text-[11px] text-slate-400 hover:text-emerald-400 block">
+                                                    📄 .md 또는 .txt 파일 선택하여 텍스트 불러오기
+                                                </label>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (!parsedText || parsedText.trim().length === 0) {
+                                                        alert("텍스트를 입력하거나 .md/.txt 파일을 선택해 주세요.");
+                                                        return;
+                                                    }
+                                                    if (!apiKey) {
+                                                        alert("Gemini API 키가 필요합니다.");
+                                                        return;
+                                                    }
+                                                    if (!sheetConfig.referenceWebhookUrl) {
+                                                        alert("Webhook URL을 입력해 주세요.");
+                                                        return;
                                                     }
 
-                                                    if (!extractedText || extractedText.trim().length === 0) {
-                                                        throw new Error("텍스트 추출 실패: 문서에 텍스트가 없거나 파싱할 수 없습니다.");
-                                                    }
+                                                    setUploadState({ status: 'uploading', message: '🤖 Gemini AI 분석 및 요약 생성 중...', detail: '자료명, 검색태그, 핵심요약 추출 중...', progress: 50 });
 
-                                                    setUploadState({ status: 'uploading', message: '🤖 Gemini AI 분석 및 핵심 요약 추출 중...', detail: '통계, 지표, 태그 분석 중...', progress: 65 });
-
-                                                    // Gemini AI 분석
-                                                    const docTitle = file.name.replace(/\.[^/.]+$/, "");
-                                                    const prompt = `당신은 소상공인 지원사업 참고자료 데이터 분석 전문가입니다.
+                                                    try {
+                                                        const docTitle = parsedTitle || '파싱 텍스트 참고자료';
+                                                        const prompt = `당신은 소상공인 지원사업 참고자료 데이터 분석 전문가입니다.
 아래 제공되는 [문서 원문 텍스트]를 정밀하게 분석하여 구글 시트 지식DB에 등록할 정보(JSON Object)를 작성해 주세요.
 
 [문서 원문 텍스트]
-${extractedText.slice(0, 15000)}
+${parsedText.slice(0, 15000)}
 
 [필수 JSON 추출 구조]
 - title: 문서 제목 (기본값: "${docTitle}")
@@ -2055,82 +2160,70 @@ ${extractedText.slice(0, 15000)}
 - summary: 문서의 핵심 수치, 통계, 주요 내용 요약 (마크다운 포맷, 3~6문장)
 - target: 분석 대상 지역/업종/시기 (예: "서울 전체 / 전업종 / 2025년")`;
 
-                                                    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-                                                    const schemaJson = {
-                                                        type: "OBJECT",
-                                                        properties: {
-                                                            title: { type: "STRING" },
-                                                            tags: { type: "STRING" },
-                                                            summary: { type: "STRING" },
-                                                            target: { type: "STRING" }
-                                                        },
-                                                        required: ["title", "tags", "summary", "target"]
-                                                    };
+                                                        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+                                                        const schemaJson = {
+                                                            type: "OBJECT",
+                                                            properties: {
+                                                                title: { type: "STRING" },
+                                                                tags: { type: "STRING" },
+                                                                summary: { type: "STRING" },
+                                                                target: { type: "STRING" }
+                                                            },
+                                                            required: ["title", "tags", "summary", "target"]
+                                                        };
 
-                                                    const gRes = await fetch(geminiUrl, {
-                                                        method: "POST",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({
-                                                            contents: [{ parts: [{ text: prompt }] }],
-                                                            generationConfig: {
-                                                                temperature: 0.2,
-                                                                responseMimeType: "application/json",
-                                                                responseSchema: schemaJson
-                                                            }
-                                                        })
-                                                    });
+                                                        const gRes = await fetch(geminiUrl, {
+                                                            method: "POST",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({
+                                                                contents: [{ parts: [{ text: prompt }] }],
+                                                                generationConfig: {
+                                                                    temperature: 0.2,
+                                                                    responseMimeType: "application/json",
+                                                                    responseSchema: schemaJson
+                                                                }
+                                                            })
+                                                        });
 
-                                                    const gData = await gRes.json();
-                                                    if (!gRes.ok || !gData.candidates) {
-                                                        throw new Error("Gemini AI 분석 실패: " + (gData.error?.message || "응답 없음"));
+                                                        const gData = await gRes.json();
+                                                        if (!gRes.ok || !gData.candidates) {
+                                                            throw new Error("Gemini AI 분석 실패: " + (gData.error?.message || "응답 없음"));
+                                                        }
+
+                                                        const aiParsed = JSON.parse(gData.candidates[0].content.parts[0].text);
+                                                        setUploadState({ status: 'uploading', message: '💾 구글 시트로 참고자료 전송 중...', detail: aiParsed.title, progress: 85 });
+
+                                                        const payload = {
+                                                            sheetName: 'Sheet1',
+                                                            priority: '', // 우선순위 공란
+                                                            title: aiParsed.title,
+                                                            tags: aiParsed.tags,
+                                                            summary: aiParsed.summary,
+                                                            target: aiParsed.target,
+                                                            fullText: parsedText
+                                                        };
+
+                                                        await fetch(sheetConfig.referenceWebhookUrl, {
+                                                            method: "POST",
+                                                            mode: "no-cors",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify(payload)
+                                                        });
+
+                                                        setUploadState({ status: 'success', message: '✅ 참고자료 시트1 직통 등록 완료!', detail: `[${aiParsed.title}] 시트 저장 완료`, progress: 100 });
+
+                                                    } catch (err) {
+                                                        console.error("Mode 2 Upload Error:", err);
+                                                        setUploadState({ status: 'error', message: '❌ 등록 실패', detail: err.message, progress: 0 });
                                                     }
-
-                                                    const aiParsed = JSON.parse(gData.candidates[0].content.parts[0].text);
-                                                    setUploadState({ status: 'uploading', message: '💾 구글 시트로 참고자료 전송 중...', detail: aiParsed.title, progress: 85 });
-
-                                                    // 구글 시트 Webhook 전송 (doPost)
-                                                    const payload = {
-                                                        sheetName: 'Sheet1',
-                                                        priority: '', // 요청사항: 우선순위는 공란
-                                                        title: aiParsed.title,
-                                                        tags: aiParsed.tags,
-                                                        summary: aiParsed.summary,
-                                                        target: aiParsed.target,
-                                                        fullText: extractedText
-                                                    };
-
-                                                    const webhookRes = await fetch(sheetConfig.referenceWebhookUrl, {
-                                                        method: "POST",
-                                                        mode: "no-cors", // Apps Script CORS 대처
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify(payload)
-                                                    });
-
-                                                    setUploadState({ status: 'success', message: '✅ 참고자료 시트1 자동 등록 완료!', detail: `[${aiParsed.title}] 시트 저장 완료`, progress: 100 });
-
-                                                } catch (err) {
-                                                    console.error("Upload error:", err);
-                                                    setUploadState({ status: 'error', message: '❌ 등록 실패', detail: err.message, progress: 0 });
-                                                }
-                                            }}
-                                        />
-                                        <label htmlFor="refFileInput" className="cursor-pointer space-y-2 block">
-                                            <Icon name="file-text" size={36} className="mx-auto text-emerald-400" />
-                                            <div className="font-bold text-sm text-slate-200">클릭하여 보고서 파일 선택 (.pdf, .txt, .md)</div>
-                                            <p className="text-[11px] text-slate-400">브라우저에서 직접 AI 파싱 및 시트에 등록합니다</p>
-                                        </label>
-                                    </div>
-
-                                    {/* 옵션 2: Kordoc 로컬 서버 (http://localhost:5000) 연동 안내 */}
-                                    <div className="p-3 bg-slate-800 rounded-xl space-y-1">
-                                        <div className="font-bold text-emerald-400 text-xs flex items-center gap-1">
-                                            <Icon name="terminal" size={14} />
-                                            <span>옵션 2: HWP / HWX / DOCX 로컬 서버(Kordoc) 사용</span>
+                                                }}
+                                                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition-all shadow-md flex items-center justify-center gap-1"
+                                            >
+                                                <Icon name="sparkles" size={14} />
+                                                <span>AI 분석 및 시트 저장</span>
+                                            </button>
                                         </div>
-                                        <p className="text-[11px] text-slate-400">
-                                            HWP 등 아래 복합 파싱이 필요한 경우 내 컴퓨터에서 <code>python kordoc_server.py</code> 실행 후 백그라운드 업로드가 가능합니다.
-                                        </p>
-                                    </div>
+                                    )}
 
                                     {/* 업로드 상태 표시 */}
                                     {uploadState.status !== 'idle' && (
