@@ -16,6 +16,75 @@ function onOpen() {
     .addToUi();
 }
 
+// --- 0. 웹앱(doPost) 데이터 수신 (참고자료 지식DB 자동 등록용) ---
+function doPost(e) {
+  try {
+    var data;
+    if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else {
+      return responseJSON_({ success: false, error: "postData 내용이 없습니다." });
+    }
+
+    // 대상 시트 지정 (기본값 Sheet1)
+    var targetSheetName = data.sheetName || 'Sheet1';
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(targetSheetName) || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+    // 헤더가 없으면 1행 생성 (우선순위, 자료명, 검색태그, 핵심 요약, 분석 대상 (지역/업종/시기), 원문 전체 (Full Text)-1)
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["우선순위", "자료명", "검색태그", "핵심 요약", "분석 대상 (지역/업종/시기)", "원문 전체 (Full Text)-1"]);
+      var headerRange = sheet.getRange(1, 1, 1, 6);
+      headerRange.setBackground("#0055A5");
+      headerRange.setFontColor("#ffffff");
+      headerRange.setFontWeight("bold");
+    }
+
+    var items = Array.isArray(data.items) ? data.items : (Array.isArray(data) ? data : [data]);
+    var insertedCount = 0;
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var priority = item.priority || ""; // 요청사항: 우선순위는 공란
+      var title = item.title || item.자료명 || "제목 없음";
+      var tags = Array.isArray(item.tags) ? item.tags.join(" ") : (item.tags || item.검색태그 || "");
+      var summary = item.summary || item.핵심요약 || "";
+      var target = item.target || item.분석대상 || "";
+      var fullText = item.fullText || item.원문 || "";
+
+      // 원문이 45,000자 초과 시 Cell별 분할 저장 (F열부터)
+      var limit = 45000;
+      var rowData = [priority, title, tags, summary, target];
+      
+      if (fullText.length === 0) {
+        rowData.push("");
+      } else {
+        for (var p = 0; p < fullText.length; p += limit) {
+          rowData.push(fullText.substring(p, p + limit));
+        }
+      }
+
+      var nextRow = sheet.getLastRow() + 1;
+      sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
+      insertedCount++;
+    }
+
+    return responseJSON_({
+      success: true,
+      message: insertedCount + "건의 참고자료 지식 DB가 구글 시트에 추가되었습니다.",
+      insertedCount: insertedCount,
+      lastRow: sheet.getLastRow()
+    });
+
+  } catch (err) {
+    return responseJSON_({ success: false, error: err.toString() });
+  }
+}
+
+function responseJSON_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 // --- 1. 원문 주입기 기능 (기존 유지) ---
 function showSidebar() {
   var html = HtmlService.createHtmlOutput(
