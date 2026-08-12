@@ -636,7 +636,32 @@
             const [uploadTab, setUploadTab] = useState(1); // 1: 원본 파싱 등록, 2: 파싱 완료 텍스트 직접 등록
             const [parsedTitle, setParsedTitle] = useState('');
             const [parsedText, setParsedText] = useState('');
+            const [serverConnected, setServerConnected] = useState(false);
             const [uploadState, setUploadState] = useState({ status: 'idle', message: '', detail: '', progress: 0 });
+
+            // 로컬 Kordoc 서버 (http://127.0.0.1:5000) 헬스체크
+            useEffect(() => {
+                if (!showUploadModal) return;
+                let isMounted = true;
+                const checkServer = async () => {
+                    try {
+                        let res;
+                        try {
+                            res = await fetch('http://127.0.0.1:5000/', { method: 'GET' });
+                        } catch (e1) {
+                            res = await fetch('http://localhost:5000/', { method: 'GET' });
+                        }
+                        if (res && res.ok && isMounted) {
+                            setServerConnected(true);
+                        }
+                    } catch (e) {
+                        if (isMounted) setServerConnected(false);
+                    }
+                };
+                checkServer();
+                const timer = setInterval(checkServer, 3000);
+                return () => { isMounted = false; clearInterval(timer); };
+            }, [showUploadModal]);
             // 시트 유효성 검증 상태 (실제 로드 성공 여부) - localStorage에 저장하여 새로고침 시에도 유지
             const [sheetStatus, setSheetStatus] = useState(() => {
                 try {
@@ -2025,11 +2050,17 @@ ${structuredScores}
                                     {/* MODE 1: 원본 문서 파일 업로드 (Kordoc) */}
                                     {uploadTab === 1 && (
                                         <div className="space-y-3">
-                                            {/* 서버 상태 안내 상자 */}
-                                            <div className="p-3 bg-amber-500/10 border-l-4 border-amber-400 rounded-lg text-amber-200 text-[11px] leading-relaxed">
-                                                <strong>⚠️ 서버 연결 확인:</strong> 업로드 전 프로젝트 폴더의 <code>run_kordoc_background.vbs</code>를 더블클릭하세요.<br/>
-                                                • 브라우저 차단 시: <a href="http://127.0.0.1:5000/" target="_blank" className="text-emerald-400 font-bold underline">[여기 클릭하여 로컬 서버 주소 열기 (http://127.0.0.1:5000)]</a> 창 확인 후 다시 업로드하세요.
-                                            </div>
+                                            {/* 서버 상태 안내 상자 (serverConnected 상태 동적 변환) */}
+                                            {serverConnected ? (
+                                                <div className="p-3 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-lg text-emerald-300 text-[11px] leading-relaxed">
+                                                    🟢 <strong>연결 완료:</strong> 내 PC의 Kordoc 파서 서버(127.0.0.1:5000)가 정상 구동 중입니다. 아래에서 원본 문서를 선택하세요!
+                                                </div>
+                                            ) : (
+                                                <div className="p-3 bg-amber-500/10 border-l-4 border-amber-400 rounded-lg text-amber-200 text-[11px] leading-relaxed">
+                                                    ⚠️ <strong>서버 미연결/차단:</strong> 업로드 전 프로젝트 폴더의 <code>run_kordoc_background.vbs</code>를 더블클릭하세요.<br/>
+                                                    • 브라우저 차단 시: <a href="http://127.0.0.1:5000/" target="_blank" className="text-emerald-400 font-bold underline">[여기 클릭하여 로컬 서버 주소 열기 (http://127.0.0.1:5000)]</a> 창 확인 후 다시 업로드하세요.
+                                                </div>
+                                            )}
 
                                             <div className="border border-dashed border-emerald-500/50 hover:border-emerald-400 rounded-xl p-6 text-center bg-slate-800/40 transition-colors">
                                                 <input
