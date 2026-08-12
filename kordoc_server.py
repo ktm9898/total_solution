@@ -207,9 +207,9 @@ class KordocHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(obj, ensure_ascii=False).encode('utf-8'))
 
 def run_server():
-    server_address = ('0.0.0.0', PORT)
+    server_address = ('127.0.0.1', PORT)
     httpd = HTTPServer(server_address, KordocHandler)
-    print(f"[OK] total_solution Local Kordoc Server Started! (http://localhost:{PORT})")
+    print(f"[OK] total_solution Local Kordoc Server Started! (http://127.0.0.1:{PORT})")
     print("[Info] Ready for document upload requests. (Press Ctrl+C to stop)")
     try:
         httpd.serve_forever()
