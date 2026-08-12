@@ -1,2 +1,5 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "pythonw c:\Users\김태명\.gemini\antigravity\scratch\total_solution\kordoc_server.py", 0, False
+Set fso = CreateObject("Scripting.FileSystemObject")
+scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
+WshShell.CurrentDirectory = scriptDir
+WshShell.Run "cmd /c start pythonw kordoc_server.py", 0, False
