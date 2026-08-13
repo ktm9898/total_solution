@@ -233,10 +233,13 @@ function fetchCdRateViaNaverFinance_() {
       valStr = valStr.replace(/<span\s+class="jum">\.<span[^>]*>/g, ".")
                      .replace(/<[^>]+>/g, "").trim();
     }
-    if (valStr && !isNaN(parseFloat(valStr))) {
-      var today = new Date();
-      var cycle = dateMatch ? dateMatch[1].replace(/\./g, "") : Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
-      return { value: valStr, cycle: cycle };
+    if (valStr) {
+      var numVal = parseFloat(valStr.replace(/[\r\n\t\s]/g, ""));
+      if (!isNaN(numVal)) {
+        var today = new Date();
+        var cycle = dateMatch ? dateMatch[1].replace(/\./g, "") : Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
+        return { value: numVal, cycle: cycle };
+      }
     }
   }
   throw new Error("Naver Finance API: CD(91일) 금리 추출 실패");
