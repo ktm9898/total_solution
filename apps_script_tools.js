@@ -161,8 +161,8 @@ function fetchCdRateViaStatisticSearch_() {
   var url = "https://ecos.bok.or.kr/api/StatisticSearch/" + ECOS_API_KEY + 
             "/json/kr/1/30/817Y002/D/" + startDate + "/" + endDate + "/010502000";
   
-  // 최대 2회 재시도 (실패 시 빠르게 폴백 및 트리거 재시도로 전환)
-  var response = fetchWithRetry_(url, 2);
+  // 1회 호출 (실패 시 불필요한 대기 없이 신속히 2차 폴백으로 전환)
+  var response = fetchWithRetry_(url, 1);
   var result = JSON.parse(response.getContentText());
   
   if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
@@ -173,12 +173,12 @@ function fetchCdRateViaStatisticSearch_() {
   throw new Error("StatisticSearch API: CD(91일) 데이터 없음");
 }
 
-/** [방법2] KeyStatisticList(100대 지표) API에서 CD수익률 추출 (폴백) */
+/** [방법2] KeyStatisticList(100대 지표) API에서 CD수익률 추출 (2차 폴백) */
 function fetchCdRateViaKeyStatistic_() {
   var url = "https://ecos.bok.or.kr/api/KeyStatisticList/" + ECOS_API_KEY + "/json/kr/1/100";
   
-  // 최대 2회 재시도
-  var response = fetchWithRetry_(url, 2);
+  // 1회 호출
+  var response = fetchWithRetry_(url, 1);
   var result = JSON.parse(response.getContentText());
   
   if (result.KeyStatisticList && result.KeyStatisticList.row) {
@@ -192,57 +192,26 @@ function fetchCdRateViaKeyStatistic_() {
   throw new Error("KeyStatisticList API: CD수익률 항목을 찾을 수 없음");
 }
 
-/** [방법3] ECOS 메인 홈페이지 스크래핑 (ECOS API 소켓/접속 실패 시 3차 폴백) */
-function fetchCdRateViaEcosHomepage_() {
-  var url = "https://ecos.bok.or.kr";
-  var response = fetchWithRetry_(url, 2);
-  var html = response.getContentText("UTF-8");
-  
-  // ECOS 메인 홈페이지의 일일지표 영역 파싱 (예: CD(91일) ... 2.93 ... 08.10 마감)
-  var cdMatch = html.match(/CD\s*\(\s*91일\s*\)[\s\S]*?([\d\.]+)/i);
-  var dateMatch = html.match(/CD\s*\(\s*91일\s*\)[\s\S]*?(\d{2}\.\d{2})/i);
-  
-  if (cdMatch && cdMatch[1]) {
-    var today = new Date();
-    var currentYear = today.getFullYear();
-    var cycle = dateMatch && dateMatch[1] 
-      ? currentYear + dateMatch[1].replace(".", "") 
-      : Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
-    return { value: cdMatch[1], cycle: cycle };
-  }
-  
-  throw new Error("ECOS 메인 홈페이지 파싱 실패");
-}
-
-/** [방법4] 네이버 금융 수집 (4차 예비 폴백) */
+/** [방법3] 네이버페이 증권 공식 API 수집 (ECOS 도메인 차단 시 검증된 3차 폴백) */
 function fetchCdRateViaNaverFinance_() {
-  var url = "https://finance.naver.com/marketindex/interestDetail.naver?marketindexCd=IRR_CD91";
+  // 네이버페이 증권 공식 프론트엔드 API 엔드포인트 (CD 91일물 코드: KFIA114000)
+  var url = "https://m.stock.naver.com/front-api/marketIndex/prices?category=domesticInterest&reutersCode=KFIA114000";
   var response = fetchWithRetry_(url, 2);
-  var html = response.getContentText("EUC-KR");
+  var resText = response.getContentText();
+  var result = JSON.parse(resText);
   
-  // 네이버 금융 금리 추출 (no_today 내 숫자 태그 또는 blind 태그)
-  var match = html.match(/<span\s+class="blind">([\d\.]+)<\/span>/) ||
-              html.match(/<p\s+class="no_today"[\s\S]*?>([\s\S]*?)<\/p>/i);
-              
-  var dateMatch = html.match(/<span\s+class="date">([\d\.]+)/);
-  
-  if (match) {
-    var valStr = match[1];
-    if (valStr.indexOf("<span") !== -1) {
-      // 이미지 폰트 span 내 숫자 결합 (<span class="no2">2</span><span class="jum">.</span>...)
-      valStr = valStr.replace(/<span\s+class="jum">\.<span[^>]*>/g, ".")
-                     .replace(/<[^>]+>/g, "").trim();
-    }
-    if (valStr) {
-      var numVal = parseFloat(valStr.replace(/[\r\n\t\s]/g, ""));
-      if (!isNaN(numVal)) {
-        var today = new Date();
-        var cycle = dateMatch ? dateMatch[1].replace(/\./g, "") : Utilities.formatDate(today, "Asia/Seoul", "yyyyMMdd");
-        return { value: numVal, cycle: cycle };
-      }
+  if (result && result.isSuccess && result.result && result.result.length > 0) {
+    var latest = result.result[0];
+    var numVal = parseFloat(latest.closePrice);
+    // localTradedAt: "2026-09-22T00:00:00+09:00" -> "20260922"
+    var dateStr = latest.localTradedAt || "";
+    var cycle = dateStr.substring(0, 10).replace(/-/g, "");
+    
+    if (!isNaN(numVal) && cycle.length === 8) {
+      return { value: numVal, cycle: cycle };
     }
   }
-  throw new Error("Naver Finance API: CD(91일) 금리 추출 실패");
+  throw new Error("Naver Finance API: CD(91일) 데이터 추출 실패");
 }
 
 function refreshEconomicData() {
@@ -262,7 +231,7 @@ function refreshEconomicData() {
   try {
     var cdData = null;
     
-    // 1차: StatisticSearch API (CD 91일물 직접 조회)
+    // 1차: StatisticSearch API (한국은행 CD 91일물 직접 조회)
     try {
       cdData = fetchCdRateViaStatisticSearch_();
       console.log("StatisticSearch API 성공");
@@ -270,22 +239,15 @@ function refreshEconomicData() {
       console.warn("StatisticSearch API 실패: " + e1.toString());
       
       try {
-        // 2차: KeyStatisticList API (100대 지표에서 추출)
+        // 2차: KeyStatisticList API (한국은행 100대 지표에서 추출)
         cdData = fetchCdRateViaKeyStatistic_();
         console.log("KeyStatisticList API(2차 폴백) 성공");
       } catch (e2) {
         console.warn("KeyStatisticList API 실패: " + e2.toString());
         
-        try {
-          // 3차: ECOS 메인 홈페이지 웹 스크래핑
-          cdData = fetchCdRateViaEcosHomepage_();
-          console.log("ECOS 메인 홈페이지(3차 폴백) 성공");
-        } catch (e3) {
-          console.warn("ECOS 메인 홈페이지 실패, 4차 네이버 금융 시도: " + e3.toString());
-          // 4차: 네이버 금융 수집 (ECOS 도메인 전체 차단 대비 4차 독립 폴백)
-          cdData = fetchCdRateViaNaverFinance_();
-          console.log("네이버 금융(4차 폴백) 성공");
-        }
+        // 3차: 네이버 금융 일별 시세 수집 (ECOS 도메인 전체 차단 대비 독립 폴백)
+        cdData = fetchCdRateViaNaverFinance_();
+        console.log("네이버 금융 일별 시세(3차 폴백) 성공");
       }
     }
     
